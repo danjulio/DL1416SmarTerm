@@ -8,11 +8,11 @@
 {\list\listtemplateid5\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid401\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid5}
 {\list\listtemplateid6\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid501\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid6}}
 {\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}{\listoverride\listid3\listoverridecount0\ls3}{\listoverride\listid4\listoverridecount0\ls4}{\listoverride\listid5\listoverridecount0\ls5}{\listoverride\listid6\listoverridecount0\ls6}}
-\margl1440\margr1440\vieww12460\viewh15140\viewkind0
+\margl1440\margr1440\vieww12460\viewh14520\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qc
 
 \f0\fs28 \cf0 DL1416SmartTerm Tiny Basic\
-Version 0.14
+Version 0.15
 \fs24 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
 \cf0 \
@@ -127,7 +127,7 @@ File names follow the 8.3 rule (a maximum of 8 filename characters and 3 file ty
 \i set a value in memory
 \i0 \
 {\listtext	\'95	}PRINT expression - 
-\i print out the expression, also "?"\
+\i print out the expression, also \'93?\'94.  Separate expressions to be printed using a comma.  Suppress a NL at the end of a PRINT statement by including a semi-colon at the end of the PRINT statement.\
 \ls3\ilvl0
 \i0 {\listtext	\'95	}INPUT variable - 
 \i read a number into the variable
@@ -174,6 +174,15 @@ File names follow the 8.3 rule (a maximum of 8 filename characters and 3 file ty
 \i0 \
 {\listtext	\'95	}PEND - 
 \i returns the address of the first byte past the last line of the program\
+{\listtext	\'95	}
+\i0 ASC(character) - 
+\i returns the 8-bit ASCII numeric value of character.  There can be no whitespace since it would be interpreted as the character - ASC( ) is space, ASC(A) is \'91A\'92.
+\i0 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720
+\ls4\ilvl0
+\i \cf2 {\listtext	\'95	}
+\i0 CHR$( expression ) - 
+\i returns an ASCII character based on the low 8-bits of the expression, only available as part of a PRINT expression\
 \pard\tx720\pardeftab720
 
 \i0 \cf2 \

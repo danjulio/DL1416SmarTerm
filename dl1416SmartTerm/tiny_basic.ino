@@ -29,6 +29,8 @@
 //      Increased stack size to 8.
 //      Fixed a few bugs here and there, mostly related to putting multiple statements
 //        on one line.
+// v0.15: 2016-11-12
+//      Added ASC and CHR$
 //
 ////////////////////////////////////////////////////////////////////////////////
 #include <avr/pgmspace.h>
@@ -49,7 +51,7 @@
 // Constants...
 
 // Version
-#define kTbVersion      "v0.14"
+#define kTbVersion      "v0.15"
 
 // Memory available to Tiny Basic
 #define kRamSize  (kTinyBasicRam-1)
@@ -180,6 +182,7 @@ static const unsigned char keywords[] PROGMEM = {
   'F', 'O', 'R' + 0x80,
   'I', 'N', 'P', 'U', 'T' + 0x80,
   'P', 'R', 'I', 'N', 'T' + 0x80,
+  'C', 'H', 'R', '$' + 0x80,
   'P', 'C', 'H', 'R' + 0x80,
   'I', 'N', 'C', 'H', 'R' + 0x80,
   'C', 'U', 'R', 'S', 'O', 'R' + 0x80,
@@ -230,6 +233,7 @@ enum {
   KW_FOR,
   KW_INPUT,
   KW_PRINT,
+  KW_CHR,
   KW_PCHR,
   KW_INCHR,
   KW_CURSOR,
@@ -266,6 +270,7 @@ static const unsigned char func_tab[] PROGMEM = {
   'D', 'R', 'E', 'A', 'D' + 0x80,
   'R', 'N', 'D' + 0x80,
   'P', 'E', 'N', 'D' + 0x80,
+  'A', 'S', 'C' + 0x80,
   0
 };
 
@@ -275,7 +280,8 @@ static const unsigned char func_tab[] PROGMEM = {
 #define FUNC_DREAD   3
 #define FUNC_RND     4
 #define FUNC_PEND    5
-#define FUNC_UNKNOWN 6
+#define FUNC_ASC     6
+#define FUNC_UNKNOWN 7
 
 static const unsigned char to_tab[] PROGMEM = {
   'T', 'O' + 0x80,
@@ -349,6 +355,7 @@ static const unsigned char dirextmsg[]        PROGMEM = "(dir)";
 static const unsigned char slashmsg[]         PROGMEM = "/";
 static const unsigned char spacemsg[]         PROGMEM = " ";
 static const unsigned char ioerrmsg[]         PROGMEM = "IO pin out of range.";
+static const unsigned char chrerrormsg[]      PROGMEM = "CHR$ must be part of PRINT statement.";
 static const unsigned char prtOfflineMsg[]    PROGMEM = "Printer offline.";
 static const unsigned char prtPaperMsg[]      PROGMEM = "Printer out of paper.";
 static const unsigned char helpKeywordMsg[]   PROGMEM = "Keywords: ";
@@ -526,6 +533,41 @@ static unsigned char print_quoted_string(void)
   txtpos++; // Skip over the last delimiter
 
   return 1;
+}
+
+/***************************************************************************/
+// Returns: -1 for malformed statement/expression
+//           0 for statement not found
+//           1 for success
+static int print_chr(void)
+{
+  short int e = 0;
+
+  if ((txtpos[0] == 'C') && (txtpos[1] == 'H') && (txtpos[2] == 'R') &&
+      (txtpos[3] == '$'))
+    {
+      txtpos += 4;
+      ignore_blanks();
+      if (*txtpos++ != '(')
+        return -1;
+
+      // Get the character expression
+      expression_error = 0;
+      e = expression();
+      if (expression_error)
+        return -1;
+
+      // Make sure we see a closing paren
+      ignore_blanks();
+      if (*txtpos++ != ')')
+        return -1;
+
+      // Finally output the character
+      outchar(e & 0x7F);
+      return 1;
+    } else {
+      return 0;
+    }
 }
 
 /***************************************************************************/
@@ -760,8 +802,19 @@ static short int expr4(void)
     // Look for functions with one parameter (get the parameter first)
     if (*txtpos != '(')
       goto expr4_error;
-
     txtpos++;
+
+    // Check for non-numeric arguments first
+    switch (f)
+    {
+      case FUNC_ASC:
+        if (txtpos[1] != ')')
+          goto expr4_error;
+        a = *txtpos;
+        txtpos += 2;  // Skip past character and closen paren
+        return a;
+    }
+    
     a = expression();
     if (*txtpos != ')')
       goto expr4_error;
@@ -1217,6 +1270,9 @@ interperateAtTxtpos:
     case KW_PRINT:
     case KW_QMARK:
       goto print;
+    case KW_CHR:
+      printmsg(chrerrormsg);
+      goto warmstart;
     case KW_PCHR:
       goto print_char;
     case KW_INCHR:
@@ -1643,8 +1699,16 @@ print:
 
   while (1)
   {
+    // Look for things we can print
     ignore_blanks();
-    if (print_quoted_string())
+    int r = print_chr();
+    if (r == 1)
+    {
+      ;
+    }
+    else if (r == -1)
+      goto qwhat;
+    else if (print_quoted_string())
     {
       ;
     }

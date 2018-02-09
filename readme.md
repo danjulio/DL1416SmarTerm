@@ -24,6 +24,10 @@ for NTSC/PAL or VGA output.
 The demo folder (and associated document) contains a version of the code designed for
 the computer to be run in an exhibition mode.  It removes some Tiny BASIC functions
 and substitues an implementation of the famous AI ELIZA program for terminal mode.
+The ELIZA module may be ported to other projects.
+
+The demo directory, in essence, supercedes the mainline code because it includes a
+compiler directive (DEMO_MODE) to switch demo mode in and out.
 
 ### Questions?
 

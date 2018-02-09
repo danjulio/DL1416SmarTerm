@@ -7,25 +7,30 @@
 {\list\listtemplateid3\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid201\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid3}
 {\list\listtemplateid4\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid301\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid4}
 {\list\listtemplateid5\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid401\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid5}
-{\list\listtemplateid6\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid501\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid6}}
-{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}{\listoverride\listid3\listoverridecount0\ls3}{\listoverride\listid4\listoverridecount0\ls4}{\listoverride\listid5\listoverridecount0\ls5}{\listoverride\listid6\listoverridecount0\ls6}}
+{\list\listtemplateid6\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid501\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid6}
+{\list\listtemplateid7\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid601\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid7}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}{\listoverride\listid3\listoverridecount0\ls3}{\listoverride\listid4\listoverridecount0\ls4}{\listoverride\listid5\listoverridecount0\ls5}{\listoverride\listid6\listoverridecount0\ls6}{\listoverride\listid7\listoverridecount0\ls7}}
 \margl1440\margr1440\vieww12460\viewh14520\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qc
 
-\f0\fs28 \cf0 DL1416 SmarTerm Tiny Basic\
+\f0\fs28 \cf0 DL1416SmartTerm Tiny Basic\
 Version 1.1 - Demo Mode
 \fs24 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
 \cf0 \
+Input can come from keyboard or any of the serial interfaces (e.g. USB host IF) to load programs from a host computer using a terminal emulator.  Output may be directed to any serial interface as well as the display (e.g. to save programs via a terminal emulator).  Tiny Basic communicates to the outside world through a set of virtual (or physical) serial ports.  The local keyboard and display appear to it logically as a terminal (and can be interacted with using escape sequences if desired).\
+\
 Each line must have a numeric line number (e.g. 10, 20, 30\'85).  Commands may be separated by the colon character (\'91:\'92) on a single line.  Commands which immediately goto another line (GOTO, RETURN) cannot have subsequent commands on the same line.  Each command is stored as an ASCII representation in memory (no tokenization).\
 \
 There are 26 variables, A-Z.  Each variable is a 16-bit signed number (-32768 to 32767).  Variables or literal numbers may be used in expressions.\
 \
-Tiny Basic provides 32 Kbytes of program memory.  Variables and the stack live at the high end of program memory and the program starts from location zero.  The MEM command returns how many bytes are available for program code.  DATA@, PEEK and POKE can access the entire range but not outside of the program memory (e.g. other DL1416 SmarTerm memory in the Teensy address space).  There is room for 8 nested FOR loops on the stack or more GOSUBs in this version of Tiny Basic.\
+Tiny Basic provides 32 Kbytes of program memory.  Variables and the stack live at the high end of program memory and the program starts from location zero.  The MEM command returns how many bytes are available for program code.  DATA@, PEEK and POKE can access the entire range but not outside of the program memory (e.g. other DL1416SmartTerm memory in the Teensy address space).  There is room for 8 nested FOR loops on the stack or more GOSUBs in this version of Tiny Basic.\
 \
 The EOT key is used as BREAK to stop execution of a Tiny Basic program.\
 \
-File names follow the 8.3 rule (a maximum of 8 filename characters and 3 file type characters which should be .BAS for Tiny Basic programs).  A file called \'93AUTORUN.BAS\'94 will be executed if it exists when Tiny Basic starts up.\
+File names follow the 8.3 rule (a maximum of 8 filename characters and 3 file type characters which should be .BAS for Tiny Basic programs).  This version of Tiny Basic is limited to 16 levels of directories on the SD card.  A file called \'93AUTORUN.BAS\'94 that exists at the top level of the filesystem will be executed if it exists when Tiny Basic starts up.\
+\
+Tiny Basic in Demo Mode restarts after 2 hours of inactivity.\
 \
 \pard\pardeftab720\sl440\sa320
 
@@ -48,10 +53,26 @@ File names follow the 8.3 rule (a maximum of 8 filename characters and 3 file ty
 \i executes the current program\
 \ls1\ilvl0
 \i0 {\listtext	\'95	}LIST 
-\i [start line number [, end line number]] - list to end with one line number argument or range between two line numbers to current OUTDST mask
+\i [start line number [, end line number]] - list to end with one line number argument or range between two line numbers to current OUTDST mask\
+\ls1\ilvl0
+\i0 {\listtext	\'95	}HLIST 
+\i [start line number [, end line number]] 
+\i0 - 
+\i list only to host ports
+\i0 \
+{\listtext	\'95	}PLIST 
+\i [start line number [, end line number]] 
+\i0 - 
+\i list only to  printer port
 \i0 \
 {\listtext	\'95	}CLS - 
 \i clear screen\
+\ls1\ilvl0
+\i0 {\listtext	\'95	}INSRC mask expression - 
+\i sets input (keyboard: bit 0, usb host: bit 1, serial host: bit 2, printer port: bit 3) defaults to keyboard + usb host (1 + 2 = 3).  Be careful to not lock yourself out.
+\i0 \
+{\listtext	\'95	}OUTDST mask expression - 
+\i sets output (screen: bit 0, usb host: bit 1, serial host: bit 2, printer port: bit 3) defaults to screen + usb host (1 + 2 = 3)\
 \ls1\ilvl0
 \i0 {\listtext	\'95	}REBOOT - 
 \i reset computer (deletes current program)\
@@ -75,6 +96,27 @@ File names follow the 8.3 rule (a maximum of 8 filename characters and 3 file ty
 {\listtext	\'95	}CHAIN filename.bas - 
 \i equivalent of: new, load filename.bas, run
 \i0 \
+{\listtext	\'95	}SAVE filename.bas - 
+\i saves the current program to the SD card, overwriting\
+\ls2\ilvl0
+\i0 {\listtext	\'95	}ERASE filename.bas - 
+\i delete the file on the SD card\
+\ls2\ilvl0
+\i0 {\listtext	\'95	}MKDIR dirname - 
+\i Make a directory
+\i0 \
+{\listtext	\'95	}RMDIR dirname - 
+\i Remove a directory
+\i0 \
+{\listtext	\'95	}DNDIR dirname - 
+\i Enter a directory
+\i0 \
+{\listtext	\'95	}UPDIR - 
+\i Exit the current directory\
+\pard\tx720\pardeftab720
+
+\i0 \cf2 \
+Except, DNDIR and UPDIR, these commands may only be executed from the command line.  DNDIR and UPDIR may be included in program code (for example to descend into a sub-directory holding audio files).\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
 \cf0 \
 \pard\pardeftab720\sl440\sa320
@@ -179,15 +221,36 @@ File names follow the 8.3 rule (a maximum of 8 filename characters and 3 file ty
 \i0 \
 {\listtext	\'95	}RETURN - 
 \i return from a subroutine
-\i0 \cf0 \
+\i0 \
+\pard\pardeftab720\sl360
+
+\b \cf3 \
+\pard\pardeftab720\sl440\sa320
+\cf2 Pin IO
+\b0 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720
+\ls6\ilvl0\cf2 {\listtext	\'95	}DWRITE pin,value - 
+\i set pin with a value (HIGH,HI,LOW,LO)
+\i0 \
+{\listtext	\'95	}AWRITE pin,value - 
+\i set pin with analog value (pwm) 0..255
+\i0 \
+{\listtext	\'95	}DREAD( pin ) - 
+\i get the value of the pin
+\i0 \
+{\listtext	\'95	}AREAD( analogPin ) - 
+\i get the value of the analog pin 0..1023 for 0-3.3Vin
+\i0 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
 \cf0 \
+	DWRITE, AREAD IO pin is [0:8].  AWRITE pin is [0:2] that are on IO pins [6:8].  Do not drive any pin with more than 3.3 volts.\
+\
 \pard\pardeftab720\sl440\sa320
 
 \b \cf2 Audio
 \b0 \
 \pard\tx220\tx720\pardeftab720\li720\fi-720
-\ls6\ilvl0\cf2 {\listtext	\'95	}DRUM index expression, value expression  - 
+\ls7\ilvl0\cf2 {\listtext	\'95	}DRUM index expression, value expression  - 
 \i Configure a DRUM sound effect parameter (see below)\
 {\listtext	\'95	}
 \i0 NOTE index expression, value expression  - 

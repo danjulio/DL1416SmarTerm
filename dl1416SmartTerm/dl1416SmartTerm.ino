@@ -187,7 +187,7 @@
  *  behavior.
  *
  *
- * Copyright (c) 2016 Dan Julio
+ * Copyright (c) 2016-2017 Dan Julio
  * All rights reserved.
  * Released as open source in hopes that it may be helpful to someone else.  No warranties or other guarantees.
  *
@@ -195,6 +195,9 @@
  * Version   Date          Author      Description
  * -----------------------------------------------------------------------------
  *   1.0     10-31-2016    DJD         Initial Version
+ *   2.0     10-20-2017    DJD         Added sound capability to Tiny Basic using the
+ *                                     Teensy 3 audio library (see tiny_basic.ino for
+ *                                     details).  Incremented Tiny Basic version to 1.0.
  *  
  * ******************************************************************************************/
 
@@ -1099,7 +1102,7 @@ void TermEval() {
 
 void TinyBasicInit() {
   // Configure for Tiny Basic operation, overwriting some terminal configuration values
-  termLocalEcho = true;
+  termLocalEcho = true; // ??? Not necessary
   termConvertCRLF = false;
   linewrapEn = true;
   tinyBasicRxPushI = 0;

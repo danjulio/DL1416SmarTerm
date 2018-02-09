@@ -31,19 +31,28 @@
 //        on one line.
 // v0.15: 2016-11-12
 //      Added ASC and CHR$
+// v1.0 : 2017-10-20
+//      Added audio support: commands DRUM, NOTE, WAV and function PLAYING?.
+//      Added keyword RENUM (unimplemented now).  Changed UPDIR and DNDIR to
+//      be able to be program statements.  Enabled Autorun functionality.
 //
 ////////////////////////////////////////////////////////////////////////////////
+#include <Audio.h>
 #include <avr/pgmspace.h>
 #include <SD.h>
+#include <SerialFlash.h>
 #include <SPI.h>
+#include <TimerOne.h>
+#include <Wire.h>
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // Feature option configuration...
 
 // this turns on "autorun".  if there's FileIO, and a file "autorun.bas",
 // then it will load it and run it when starting up
-//#define ENABLE_AUTORUN 1
-#undef ENABLE_AUTORUN
+#define ENABLE_AUTORUN 1
+//#undef ENABLE_AUTORUN
 // and this is the file that gets run
 #define kAutorunFilename  "autorun.bas"
 
@@ -51,7 +60,7 @@
 // Constants...
 
 // Version
-#define kTbVersion      "v0.15"
+#define kTbVersion      "v1.0"
 
 // Memory available to Tiny Basic
 #define kRamSize  (kTinyBasicRam-1)
@@ -200,6 +209,9 @@ static const unsigned char keywords[] PROGMEM = {
   'A', 'W', 'R', 'I', 'T', 'E' + 0x80,
   'D', 'W', 'R', 'I', 'T', 'E' + 0x80,
   'D', 'E', 'L', 'A', 'Y' + 0x80,
+  'D', 'R', 'U', 'M' + 0x80,
+  'N', 'O', 'T', 'E' + 0x80,
+  'W', 'A', 'V' + 0x80,
   'E', 'N', 'D' + 0x80,
   'R', 'S', 'E', 'E', 'D' + 0x80,
   'C', 'H', 'A', 'I', 'N' + 0x80,
@@ -209,6 +221,7 @@ static const unsigned char keywords[] PROGMEM = {
   'D', 'N', 'D', 'I', 'R' + 0x80,
   'U', 'P', 'D', 'I', 'R' + 0x80,
   'H', 'E', 'L', 'P' + 0x80,
+  'R', 'E', 'N', 'U', 'M' + 0x80,
   0
 };
 
@@ -251,6 +264,9 @@ enum {
   KW_AWRITE,
   KW_DWRITE,
   KW_DELAY,
+  KW_DRUM,
+  KW_NOTE,
+  KW_WAV,
   KW_END,
   KW_RSEED,
   KW_CHAIN,
@@ -260,6 +276,7 @@ enum {
   KW_DNDIR,
   KW_UPDIR,
   KW_HELP,
+  KW_RENUM,
   KW_DEFAULT /* always the final one*/
 };
 
@@ -271,6 +288,7 @@ static const unsigned char func_tab[] PROGMEM = {
   'R', 'N', 'D' + 0x80,
   'P', 'E', 'N', 'D' + 0x80,
   'A', 'S', 'C' + 0x80,
+  'P', 'L', 'A', 'Y', 'I', 'N', 'G', '?' + 0x80,
   0
 };
 
@@ -281,7 +299,8 @@ static const unsigned char func_tab[] PROGMEM = {
 #define FUNC_RND     4
 #define FUNC_PEND    5
 #define FUNC_ASC     6
-#define FUNC_UNKNOWN 7
+#define FUNC_PLAYING 7
+#define FUNC_UNKNOWN 8
 
 static const unsigned char to_tab[] PROGMEM = {
   'T', 'O' + 0x80,
@@ -364,6 +383,8 @@ static const unsigned char helpMathMsg[]      PROGMEM = "Math and Logical Operat
 static const unsigned char helpRelopMsg[]     PROGMEM = "Relational Operators: ";
 static const unsigned char helpLogicLvlMsg[]  PROGMEM = "Pin IO Logic Levels: ";
 static const unsigned char stackErrMsg[]      PROGMEM = "Internal Error: Stack is stuffed!";
+static const unsigned char audioIndexErrMsg[] PROGMEM = "Unknown Audio Command Index.";
+static const unsigned char audioFileErrMsg[]  PROGMEM = "Could not open Audio file.";
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -379,7 +400,37 @@ static const int analogIOpins[kNumAnalogIO] = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
 
 ////////////////////////////////////////////////////////////////////////////////
+// Teensy Audio generation...
+
+// GUItool: begin automatically generated code
+AudioSynthWaveform       waveform1;
+AudioPlaySdWav           playSdWav1;
+AudioSynthSimpleDrum     drum1;
+AudioEffectEnvelope      envelope1;
+AudioMixer4              mixer1;
+AudioOutputAnalog        dac1;
+AudioConnection          patchCord1(waveform1, envelope1);
+AudioConnection          patchCord2(playSdWav1, 0, mixer1, 2);
+AudioConnection          patchCord3(playSdWav1, 1, mixer1, 3);
+AudioConnection          patchCord4(drum1, 0, mixer1, 0);
+AudioConnection          patchCord5(envelope1, 0, mixer1, 1);
+AudioConnection          patchCord6(mixer1, dac1);
+// GUItool: end automatically generated code
+
+// State
+static unsigned int note_duration_msec;
+static short note_type;
+static boolean note_playing = false;
+
+// Wave full filename
+char expanded_wavfile_name[kMaxDirLevels*kMaxFilenameLen+1];
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
 // Code...
+
 
 /***************************************************************************/
 static void ignore_blanks(void)
@@ -391,6 +442,7 @@ static void ignore_blanks(void)
 /***************************************************************************/
 static void scantable(unsigned const char *table)
 {
+
   int i = 0;
   table_index = 0;
   while (1)
@@ -558,10 +610,11 @@ static int print_chr(void)
         return -1;
 
       // Make sure we see a closing paren
-      ignore_blanks();
       if (*txtpos++ != ')')
         return -1;
 
+      ignore_blanks();
+      
       // Finally output the character
       outchar(e & 0x7F);
       return 1;
@@ -851,6 +904,13 @@ static short int expr4(void)
 
       case FUNC_RND:
         return ( random( a ));
+
+      case FUNC_PLAYING:
+        if (a == 0) {
+          return (note_playing) ? 1 : 0;
+        } else {
+          return (playSdWav1.isPlaying()) ? 1 : 0;
+        }
     }
   }
 
@@ -1017,6 +1077,9 @@ void tb_loop()
   printmsg(memorymsg);
 
 warmstart:
+  // End any playing audio
+  end_audio();
+  
   // this signifies that it is running in 'direct' mode.
   current_line = 0;
   sp = program + sizeof(program);
@@ -1142,14 +1205,17 @@ prompt:
   goto prompt;
 
 unimplemented:
+  end_audio();
   printmsg(unimplimentedmsg);
   goto prompt;
 
 qhow:
+  end_audio();
   printmsg(howmsg);
   goto prompt;
 
 qwhat:
+  end_audio();
   printmsgNoNL(whatmsg);
   if (current_line != NULL)
   {
@@ -1169,6 +1235,14 @@ qsorry:
 
 qioerr:
   printmsg(ioerrmsg);
+  goto warmstart;
+
+qsounderr:
+  printmsg(audioIndexErrMsg);
+  goto warmstart;
+
+qsoundfileerr:
+  printmsg(audioFileErrMsg);
   goto warmstart;
 
 run_next_statement:
@@ -1292,10 +1366,11 @@ interperateAtTxtpos:
       // This is the easy way to end - set the current line to the end of program attempt to run it
       if (txtpos[0] != NL)
         goto qwhat;
+      end_audio();
       current_line = program_end;
       goto execline;
     case KW_BYE:
-      // Leave the basic interperater
+      // Leave the basic interpreter
       return;
     case KW_AWRITE:  // AWRITE <pin>, HIGH|LOW
       isDigital = false;
@@ -1307,8 +1382,16 @@ interperateAtTxtpos:
       goto rseed;
     case KW_DEFAULT:
       goto assignment;
+    case KW_DRUM:
+      goto drum;
+    case KW_NOTE:
+      goto note;
+    case KW_WAV:
+      goto play_wav;
     case KW_HELP:
       goto print_help;
+    case KW_RENUM:
+      goto unimplemented;
     default:
       break;
   }
@@ -1330,7 +1413,6 @@ do_delay:
     val = expression();
     if (expression_error)
       goto qwhat;
-    ignore_blanks();
     if (*txtpos != NL && *txtpos != ':')
       goto qwhat;
     
@@ -1394,7 +1476,7 @@ forloop:
     }
     else
       step = 1;
-    ignore_blanks();
+
     if (*txtpos != NL && *txtpos != ':')
       goto qwhat;
 
@@ -1421,7 +1503,6 @@ forloop:
 gosub:
   expression_error = 0;
   linenum = expression();
-  ignore_blanks();
   if (!expression_error && ((*txtpos == NL) || (*txtpos == ':')))
   {
     struct stack_gosub_frame *f;
@@ -1542,7 +1623,6 @@ load_data:
       goto qwhat;
 
     // Process any arguments
-    ignore_blanks();
     if (txtpos[0] == ',') {
       txtpos++;
       ignore_blanks();
@@ -1577,7 +1657,6 @@ poke:
       goto qwhat;
 
     // check for a comma
-    ignore_blanks();
     if (*txtpos != ',')
       goto qwhat;
     txtpos++;
@@ -1783,7 +1862,6 @@ input_char:
       cur_timeout = e;
       if (expression_error)
         goto qwhat;
-      ignore_blanks();
     } else {
       e = 0;  // No timeout specified means wait forever
     }
@@ -1823,7 +1901,6 @@ set_cursor:
     e1 = expression();
     if (expression_error)
       goto qwhat;
-    ignore_blanks();
 
     if (!((*txtpos == NL) || (*txtpos == ':') || (*txtpos == ','))) {
       goto qwhat;
@@ -1892,7 +1969,6 @@ set_input:
     e = expression();
     if (expression_error)
       goto qwhat;
-    ignore_blanks();
 
     // Make sure we're at the end of the line
     if ((*txtpos != NL) && (*txtpos != ':'))
@@ -1911,7 +1987,6 @@ set_output:
     e = expression();
     if (expression_error)
       goto qwhat;
-    ignore_blanks();
 
     // Make sure we're at the end of the line
     if ((*txtpos != NL) && (*txtpos != ':'))
@@ -1952,7 +2027,6 @@ dwrite:
       goto qwhat;
 
     // check for a comma
-    ignore_blanks();
     if (*txtpos != ',')
       goto qwhat;
     txtpos++;
@@ -2153,6 +2227,12 @@ dn_dir:
     if (expression_error)
       goto qwhat;
     
+    ignore_blanks();
+
+    // Check that we are at the end of the statement
+    if (*txtpos != NL && *txtpos != ':')
+      goto qwhat;
+      
     if (cur_dir_level < (kMaxDirLevels-1)) {
       // Build a complete path to the directory we want to "enter"
       build_expanded_filename(dirname);
@@ -2167,17 +2247,25 @@ dn_dir:
         cur_dir_level++;
       } else {
         printmsg( sdfilemsg );
+        goto warmstart;
       }
     } else {
       printmsg( sdnofilemsg );
+      goto warmstart;
     }
-    goto warmstart;
   }
+  goto run_next_statement;
 
 up_dir:
+  ignore_blanks();
+
+  // Check that we are at the end of the statement
+  if (*txtpos != NL && *txtpos != ':')
+    goto qwhat;
+  
   // Move out of current directory
   if (cur_dir_level > 0) cur_dir_level--;
-  goto warmstart;
+  goto run_next_statement;
   
 rseed:
   {
@@ -2188,8 +2276,6 @@ rseed:
     value = expression();
     if (expression_error)
       goto qwhat;
-      
-    ignore_blanks();
 
     // Check that we are at the end of the statement
     if (*txtpos != NL && *txtpos != ':')
@@ -2198,6 +2284,240 @@ rseed:
     randomSeed( value );
   }
   goto run_next_statement;
+
+drum:
+  {
+    short int e1 = 0;
+    short int e2 = 0;
+
+    // Get index
+    expression_error = 0;
+    e1 = expression();
+    if (expression_error)
+      goto qwhat;
+
+    if (*txtpos != ',') {
+      goto qwhat;
+    }
+
+    // Get argument
+    txtpos++;
+    e2 = expression();
+    if (expression_error)
+      goto qwhat;
+
+    // Make sure we're at the end of the line
+    if ((*txtpos != NL) && (*txtpos != ':'))
+      goto qwhat;
+
+    // Execute command
+    switch (e1) {
+      case 0: // Trigger
+        if (e2 != 0) {
+          drum1.noteOn();
+        }
+        break;
+      case 1: // Frequency
+        if (e2 > 0) {
+          drum1.frequency(e2);
+        }
+        break;
+      case 2: // Amplitude
+        if (e2 < 0) e2 = 0;
+        if (e2 > 100) e2 = 100;
+        mixer1.gain(0, ((float) e2) / 100.0);
+        break;
+      case 3: // Length
+        if (e2 < 0) e2 = 0;
+        drum1.length(e2);
+        break;
+      case 4: // SecondMix
+        if (e2 < 0) e2 = 0;
+        if (e2 > 100) e2 = 100;
+        drum1.secondMix(((float) e2) / 100.0);
+        break;
+      case 5: // PitchMod
+        if (e2 < 0) e2 = 0;
+        if (e2 > 100) e2 = 100;
+        drum1.pitchMod(((float) e2) / 100.0);
+        break;
+      default:
+        goto qsounderr;
+    }
+    
+  }
+  goto run_next_statement;
+
+note:
+  {
+    short int e1 = 0;
+    short int e2 = 0;
+
+    // Get index
+    expression_error = 0;
+    e1 = expression();
+    if (expression_error)
+      goto qwhat;
+
+    if (*txtpos != ',') {
+      goto qwhat;
+    }
+
+    // Get argument
+    txtpos++;
+    e2 = expression();
+    if (expression_error)
+      goto qwhat;
+
+    // Make sure we're at the end of the line
+    if ((*txtpos != NL) && (*txtpos != ':'))
+      goto qwhat;
+
+    // Execute command
+    switch (e1) {
+      case 0: // Trigger
+        if (e2 != 0) {
+          waveform1.begin(note_type);
+          waveform1.amplitude(1.0);
+          envelope1.noteOn();
+          note_playing = true;
+          Timer1.setPeriod(note_duration_msec * 1000);
+          Timer1.start();
+        } else {
+          end_note();
+        }
+        break;
+      case 1: // Frequency
+        if (e2 > 0) {
+          waveform1.frequency(e2);
+        }
+        break;
+      case 2: // Amplitude
+        if (e2 < 0) e2 = 0;
+        if (e2 > 100) e2 = 100;
+        mixer1.gain(1, ((float) e2) / 100.0);
+        break;
+      case 3: // Length
+        if (e2 < 0) e2 = 0;
+        note_duration_msec = e2;
+        break;
+      case 4: // Waveform
+        switch (e2) {
+          case 1: note_type = WAVEFORM_SAWTOOTH; break;
+          case 2: note_type = WAVEFORM_SQUARE; break;
+          case 3: note_type = WAVEFORM_TRIANGLE; break;
+          case 4: note_type = WAVEFORM_PULSE; break;
+          case 5: note_type = WAVEFORM_SAWTOOTH_REVERSE; break;
+          default: note_type = WAVEFORM_SINE; break;
+        }
+      case 5: // PulseWidth
+        if (e2 < 0) e2 = 0;
+        if (e2 > 100) e2 = 100;
+        waveform1.pulseWidth(((float) e2) / 100.0);
+        break;
+      case 6: // Attack
+        if (e2 < 0) e2 = 0;
+        envelope1.attack(e2);
+        break;
+      case 7: // Hold
+        if (e2 < 0) e2 = 0;
+        envelope1.hold(e2);
+        break;
+      case 8: // Decay
+        if (e2 < 0) e2 = 0;
+        envelope1.decay(e2);
+        break;
+      case 9: // Sustain
+        if (e2 < 0) e2 = 0;
+        if (e2 > 100) e2 = 100;
+        envelope1.sustain(((float) e2) / 100.0);
+        break;
+      case 10: // Release
+        if (e2 < 0) e2 = 0;
+        envelope1.release(e2);
+        break;
+      default:
+        goto qsounderr;
+    }
+  }
+  goto run_next_statement;
+
+play_wav:
+  {
+    short int e1 = 0;
+    short int e2 = 0;
+    char *filename;
+
+    // Get index
+    expression_error = 0;
+    e1 = expression();
+    if (expression_error)
+      goto qwhat;
+    
+    if (*txtpos != ',') {
+      goto qwhat;
+    }
+    txtpos++;
+
+    // Get Argument
+    if (e1 == 1) {
+      // Work out the filename
+      ignore_blanks();
+      filename = filenameWord();
+      if (expression_error)
+        goto qwhat;
+
+      // Make sure we're at the end of the line
+      ignore_blanks();
+      if ((*txtpos != NL) && (*txtpos != ':'))
+        goto qwhat;
+
+      // Create the full directory path in expanded_file_name
+      build_expanded_filename(filename);
+
+      // Save the the complete filename to our expanded_wavfile_name variable if the file exists
+      if ( SD.exists( expanded_file_name )) {
+        memcpy(expanded_wavfile_name, expanded_file_name, strlen(expanded_file_name)+1);
+      } else {
+        goto qsoundfileerr;
+      }
+    } else {
+      // Get numeric argument
+      expression_error = 0;
+      e2 = expression();
+      if (expression_error)
+        goto qwhat;
+
+      // Make sure we're at the end of the line
+      if ((*txtpos != NL) && (*txtpos != ':'))
+        goto qwhat;
+
+      // Execute command
+      switch (e1) {
+        case 0: // Trigger
+          if (e2 != 0) {
+            if ( SD.exists( expanded_wavfile_name )) {
+              if (!playSdWav1.play(expanded_wavfile_name)) {
+                goto qsoundfileerr;
+              }
+            }
+          } else {
+            playSdWav1.stop();
+          }
+          break;
+        case 2: // Amplitude
+          if (e2 < 0) e2 = 0;
+          if (e2 > 100) e2 = 100;
+          mixer1.gain(2, ((float) e2) / 200.0);
+          mixer1.gain(3, ((float) e2) / 200.0);
+          break;
+        default:
+         goto qsounderr;
+      }
+    }
+  }
+  goto run_next_statement;
+
 
 print_help:
   {
@@ -2237,6 +2557,8 @@ void tb_setup()
 
   initSD();
   cur_dir_level = 0;
+
+  init_audio();
 
 #ifdef ENABLE_AUTORUN
   if ( SD.exists( kAutorunFilename )) {
@@ -2375,7 +2697,7 @@ char * filenameWord(void)
   cstep = 0;
   i = 0;
   j = 0;
-  while (isValidFnChar(c = *txtpos++)) {
+  while (isValidFnChar(c = *txtpos)) {
     switch (cstep) {
       case 0: // Start building filename chars
         cur_file_name[i++] = c;
@@ -2409,6 +2731,9 @@ char * filenameWord(void)
       case 4: // ignoring filetype chars
         break;
     }
+
+    // Move to next character
+    txtpos++;
   }
   
   if (cstep == 0) {
@@ -2519,4 +2844,85 @@ void cmd_Files( void )
   }
   dir.close();
 }
+
+
+/***************************************************************************/
+// Audio Support
+//
+void init_audio()
+{
+  // Stop any ongoing audio in case we are be called for a reboot
+  end_audio();
+
+  AudioNoInterrupts();
+
+  AudioMemory(6);
+  
+  // Initialize the audio objects with default values
+  mixer1.gain(0, 1.0);
+  mixer1.gain(1, 1.0);
+  mixer1.gain(2, 0.5);  // sd playback stereo signals each contribute half
+  mixer1.gain(3, 0.5);
+
+  drum1.frequency(550);
+  drum1.length(750);
+  drum1.secondMix(0.0);
+  drum1.pitchMod(0.5);
+
+  note_type = WAVEFORM_SINE;
+  waveform1.frequency(440);
+  waveform1.amplitude(0.0);
+  waveform1.pulseWidth(0.5);
+
+  envelope1.attack(10);
+  envelope1.hold(1);
+  envelope1.decay(15);
+  envelope1.sustain(0.5);
+  envelope1.release(30);
+
+  note_duration_msec = 750;
+
+  expanded_wavfile_name[0] = '\0';
+
+  AudioInterrupts();
+
+  Timer1.stop();
+  Timer1.attachInterrupt(timer1_isr);
+}
+
+void end_audio()
+{
+  playSdWav1.stop();
+  envelope1.noteOff();
+  waveform1.amplitude(0.0);
+  Timer1.stop();
+}
+
+void end_note()
+{
+  // Stop note playback
+  envelope1.noteOff();
+  note_playing = false;
+
+  // Disable timer
+  Timer1.stop();
+}
+
+void timer1_isr()
+{
+  end_note();
+}
+
+void print_audio_statistics()
+{
+  Serial.print("Audio Statistics: ");
+  Serial.print(AudioProcessorUsageMax());
+  Serial.print(" ");
+  Serial.println(AudioMemoryUsageMax());
+  AudioProcessorUsageMaxReset();
+  AudioMemoryUsageMaxReset();
+}
+
+
+
 

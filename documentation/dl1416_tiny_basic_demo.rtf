@@ -1,0 +1,461 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1265\cocoasubrtf210
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;\red38\green38\blue38;\red50\green98\blue178;\red191\green191\blue191;
+}
+{\*\listtable{\list\listtemplateid1\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid1\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid1}
+{\list\listtemplateid2\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid101\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid2}
+{\list\listtemplateid3\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid201\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid3}
+{\list\listtemplateid4\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid301\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid4}
+{\list\listtemplateid5\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid401\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid5}
+{\list\listtemplateid6\listhybrid{\listlevel\levelnfc23\levelnfcn23\leveljc0\leveljcn0\levelfollow0\levelstartat1\levelspace360\levelindent0{\*\levelmarker \{disc\}}{\leveltext\leveltemplateid501\'01\uc0\u8226 ;}{\levelnumbers;}\fi-360\li720\lin720 }{\listname ;}\listid6}}
+{\*\listoverridetable{\listoverride\listid1\listoverridecount0\ls1}{\listoverride\listid2\listoverridecount0\ls2}{\listoverride\listid3\listoverridecount0\ls3}{\listoverride\listid4\listoverridecount0\ls4}{\listoverride\listid5\listoverridecount0\ls5}{\listoverride\listid6\listoverridecount0\ls6}}
+\margl1440\margr1440\vieww12460\viewh14520\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qc
+
+\f0\fs28 \cf0 DL1416 SmarTerm Tiny Basic\
+Version 1.1 - Demo Mode
+\fs24 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \
+Each line must have a numeric line number (e.g. 10, 20, 30\'85).  Commands may be separated by the colon character (\'91:\'92) on a single line.  Commands which immediately goto another line (GOTO, RETURN) cannot have subsequent commands on the same line.  Each command is stored as an ASCII representation in memory (no tokenization).\
+\
+There are 26 variables, A-Z.  Each variable is a 16-bit signed number (-32768 to 32767).  Variables or literal numbers may be used in expressions.\
+\
+Tiny Basic provides 32 Kbytes of program memory.  Variables and the stack live at the high end of program memory and the program starts from location zero.  The MEM command returns how many bytes are available for program code.  DATA@, PEEK and POKE can access the entire range but not outside of the program memory (e.g. other DL1416 SmarTerm memory in the Teensy address space).  There is room for 8 nested FOR loops on the stack or more GOSUBs in this version of Tiny Basic.\
+\
+The EOT key is used as BREAK to stop execution of a Tiny Basic program.\
+\
+File names follow the 8.3 rule (a maximum of 8 filename characters and 3 file type characters which should be .BAS for Tiny Basic programs).  A file called \'93AUTORUN.BAS\'94 will be executed if it exists when Tiny Basic starts up.\
+\
+\pard\pardeftab720\sl440\sa320
+
+\b \cf2 System\
+\pard\tx220\tx720\pardeftab720\li720\fi-720
+\ls1\ilvl0
+\b0 \cf2 {\listtext	\'95	}BYE - 
+\i exits Basic, soft reboot of Tiny Basic
+\i0 \
+{\listtext	\'95	}END - 
+\i stops execution from the program, also "STOP"
+\i0 \
+{\listtext	\'95	}MEM - 
+\i displays memory usage statistics
+\i0 \
+{\listtext	\'95	}NEW - 
+\i clears the current program
+\i0 \
+{\listtext	\'95	}RUN - 
+\i executes the current program\
+\ls1\ilvl0
+\i0 {\listtext	\'95	}LIST 
+\i [start line number [, end line number]] - list to end with one line number argument or range between two line numbers to current OUTDST mask
+\i0 \
+{\listtext	\'95	}CLS - 
+\i clear screen\
+\ls1\ilvl0
+\i0 {\listtext	\'95	}REBOOT - 
+\i reset computer (deletes current program)\
+\ls1\ilvl0
+\i0 {\listtext	\'95	}HELP - 
+\i list commands and functions
+\i0 \cf0 \
+\pard\pardeftab720\sl360
+
+\b \cf3 \
+\pard\pardeftab720\sl440\sa320
+\cf2 File IO/SD Card
+\b0 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720
+\ls2\ilvl0\cf2 {\listtext	\'95	}FILES - 
+\i lists the files on the SD card
+\i0 \
+{\listtext	\'95	}LOAD filename.bas - 
+\i loads a file from the SD card
+\i0 \
+{\listtext	\'95	}CHAIN filename.bas - 
+\i equivalent of: new, load filename.bas, run
+\i0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \
+\pard\pardeftab720\sl440\sa320
+
+\b \cf2 IO, Documentation\
+\pard\tx220\tx720\pardeftab720\li720\fi-720
+\ls3\ilvl0
+\b0 \cf2 {\listtext	\'95	}DATA@ address expression, val [,val\'85] - 
+\i loads data into memory at the specified address for access by PEEK or POKE.  val are 8-bit numbers (0-255).  Address must be non-zero and located above the last line of code (PEND) but below the stack
+\i0 \
+{\listtext	\'95	}PEEK( address expression) - 
+\i get a value in memory
+\i0 \
+{\listtext	\'95	}POKE address expression, data expression - 
+\i set a value in memory
+\i0 \
+{\listtext	\'95	}PRINT expression - 
+\i print out the expression, also \'93?\'94.  Separate expressions to be printed using a comma.  Suppress a NL at the end of a PRINT statement by including a semi-colon at the end of the PRINT statement.\
+\ls3\ilvl0
+\i0 {\listtext	\'95	}INPUT variable - 
+\i read a number into the variable
+\i0 \
+{\listtext	\'95	}REM stuff - 
+\i remark/comment, also "'"\
+\ls3\ilvl0
+\i0 {\listtext	\'95	}PCHR expression - 
+\i print a specified character\
+\ls3\ilvl0
+\i0 {\listtext	\'95	}INCHR variable [, delay expression] - 
+\i returns the ASCII value of a key from the incoming buffer to a variable.  By default it will wait until a key is pressed.  An optional expression can set a timeout in mSec to wait before returning.  If no key was pressed before returning it will return 0 in the variable.
+\i0 \
+{\listtext	\'95	}CURSOR row expression, col expression - 
+\i set the cursor to a specific screen location (0-based)
+\i0 \
+\pard\pardeftab720\sl360
+
+\b \cf3 \
+\pard\pardeftab720\sl440\sa320
+\cf2 Expressions, Math\
+\pard\tx220\tx720\pardeftab720\li720\fi-720
+\ls4\ilvl0
+\b0 \cf2 {\listtext	\'95	}A=V, LET A=V - 
+\i assign value to a variable
+\i0 \
+{\listtext	\'95	}+, -, *, / - 
+\i Math\
+\ls4\ilvl0
+\i0 {\listtext	\'95	}&, |, ^ - 
+\i Logic (AND, OR, XOR)
+\i0 \
+{\listtext	\'95	}<,<=,=,<>,!=,>=,> - 
+\i Comparisons
+\i0 \
+{\listtext	\'95	}ABS( expression ) - 
+\i returns the absolute value of the expression
+\i0 \
+{\listtext	\'95	}RSEED( v ) - 
+\i sets the random seed to v
+\i0 \
+{\listtext	\'95	}RND( m ) - 
+\i returns a random number from 0 to m
+\i0 \
+{\listtext	\'95	}PEND - 
+\i returns the address of the first byte past the last line of the program\
+{\listtext	\'95	}
+\i0 ASC(character) - 
+\i returns the 8-bit ASCII numeric value of character.  There can be no whitespace since it would be interpreted as the character - ASC( ) is space, ASC(A) is \'91A\'92.
+\i0 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720
+\ls4\ilvl0
+\i \cf2 {\listtext	\'95	}
+\i0 CHR$( expression ) - 
+\i returns an ASCII character based on the low 8-bits of the expression, only available as part of a PRINT expression\
+\pard\tx720\pardeftab720
+
+\i0 \cf2 \
+\pard\pardeftab720\sl440\sa320
+
+\b \cf2 Control
+\b0 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720
+\ls5\ilvl0\cf2 {\listtext	\'95	}DELAY timems expression 
+\i - wait (in milliseconds)
+\i0 \
+{\listtext	\'95	}IF expression statement - 
+\i perform statement if expression is true
+\i0 \
+{\listtext	\'95	}FOR variable = start TO end - 
+\i start for block
+\i0 \
+{\listtext	\'95	}FOR variable = start TO end STEP value - 
+\i start for block with step
+\i0 \
+{\listtext	\'95	}NEXT variable - 
+\i end of for block
+\i0 \
+{\listtext	\'95	}GOTO linenumber - 
+\i continue execution at this line number
+\i0 \
+{\listtext	\'95	}GOSUB linenumber - 
+\i call a subroutine at this line number
+\i0 \
+{\listtext	\'95	}RETURN - 
+\i return from a subroutine
+\i0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 \
+\pard\pardeftab720\sl440\sa320
+
+\b \cf2 Audio
+\b0 \
+\pard\tx220\tx720\pardeftab720\li720\fi-720
+\ls6\ilvl0\cf2 {\listtext	\'95	}DRUM index expression, value expression  - 
+\i Configure a DRUM sound effect parameter (see below)\
+{\listtext	\'95	}
+\i0 NOTE index expression, value expression  - 
+\i Configure a NOTE sound effect parameter (see below)\
+{\listtext	\'95	}
+\i0 WAV index expression, value expression  - 
+\i Configure a WAV file playback parameter (see below)\
+{\listtext	\'95	}
+\i0 PLAYING?( n ) - 
+\i Returns 1 if a NOTE or WAV is currently playing, 0 if they are not playing.  Set n = 0 for NOTE and n = 1 for WAV.\
+\pard\tx720\pardeftab720
+
+\i0 \cf0 \
+Sounds are mixed so distortion may occur if the sum of the mixed sound\'92s amplitudes is greater than 100.\
+\
+\
+DRUM arguments\
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrt\brdrnil \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth820\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9760\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5
+
+\b \cf0 Index
+\b0 \cell 
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5
+
+\b \cf0 Value
+\b0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth820\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9760\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5\qc
+\cf0 0\cell 
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5
+
+\i \cf0 Trigger - Non-zero value triggers sound.  Zero value has no effect.
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth820\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9760\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5\qc
+\cf0 1\cell 
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5
+
+\i \cf0 Frequency (Hz).  Default is 550 Hz.
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth820\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9760\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5\qc
+\cf0 2\cell 
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5
+
+\i \cf0 Amplitude (0 - 100).  Default is 100.
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth820\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9760\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5\qc
+\cf0 3\cell 
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5
+
+\i \cf0 Length (mSec).  Default is 750 mSec.
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth820\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9760\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5\qc
+\cf0 4\cell 
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5
+
+\i \cf0 SecondMix (0 - 100).  \cf2 Emulates a two-headed tom, by adding a second sine wave that is harmonized a perfect fifth above the base frequency.  Default is 50.
+\i0 \cf0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrt\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth820\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9760\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5\qc
+\cf0 5\cell 
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5
+
+\i \cf0 PitchMod (0 - 100).  \cf2 Set the depth of envelope of the pitch, by a maximum of two octaves. Default is 50, with no modulation. Values above 50 cause the pitch to sweep downwards, values lower than 50 cause the pitch to sweep upwards.
+\i0 \cf0 \cell \lastrow\row
+\pard\tx720\pardeftab720\li4\fi-5
+\cf0 \
+\pard\tx720\pardeftab720
+\cf0 \
+NOTE arguments\
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrt\brdrnil \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth860\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9740\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720
+
+\b \cf0 Index
+\b0 \cell 
+\pard\intbl\itap1\tx720\pardeftab720
+
+\b \cf0 Value
+\b0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth860\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9740\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\qc
+\cf0 0\cell 
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5
+
+\i \cf0 Trigger - Non-zero value triggers sound.  Zero value stops note (early).
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth860\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9740\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\qc
+\cf0 1\cell 
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5
+
+\i \cf0 Frequency (Hz).  Default is 440 Hz.
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth860\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9740\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\qc
+\cf0 2\cell 
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5
+
+\i \cf0 Amplitude (0 - 100).  Default is 100.
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth860\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9740\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\qc
+\cf0 3\cell 
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5
+
+\i \cf0 Length (mSec).  Default is 750 mSec.
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth860\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9740\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\qc
+\cf0 4\cell 
+\pard\intbl\itap1\tx720\pardeftab720
+
+\i \cf0 Waveform (default is Sine)\
+  0: Sine\
+  1: Sawtooth\
+  2: Square\
+  3: Triangle\
+  4: Pulse\
+  5: Reverse Sawtooth
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth860\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9740\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\qc
+\cf0 5\cell 
+\pard\intbl\itap1\tx720\pardeftab720
+
+\i \cf0 PulseWidth (0 - 100).  The duty cycle of the waveform.  Default is 50.
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth860\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9740\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\qc
+\cf0 6\cell 
+\pard\intbl\itap1\tx720\pardeftab720
+
+\i \cf0 Note Envelope Attack (mSec).  The attack time after a note is triggered.  Default is 10 mSec.
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth860\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9740\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\qc
+\cf0 7\cell 
+\pard\intbl\itap1\tx720\pardeftab720
+
+\i \cf0 Note Envelope Hold (mSec).  The note hold time.  Default is 1 mSec.
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth860\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9740\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\qc
+\cf0 8\cell 
+\pard\intbl\itap1\tx720\pardeftab720
+
+\i \cf0 Note Envelope Decay (mSec).  The note decay time.  Default is 15 mSec.
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth860\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9740\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\qc
+\cf0 9\cell 
+\pard\intbl\itap1\tx720\pardeftab720
+
+\i \cf0 Note Envelope Sustain (0-100).  The sustain level after decay between the end of the delay time and the end of the note length.  Default is 50.
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrt\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth860\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9740\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\qc
+\cf0 10\cell 
+\pard\intbl\itap1\tx720\pardeftab720
+
+\i \cf0 Note Envelope release (mSec).  The note release time after length.  Default is 30 mSec.
+\i0 \cell \lastrow\row
+\pard\tx720\pardeftab720
+\cf0 \
+\
+WAV arguments\
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrt\brdrnil \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth900\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9720\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720
+
+\b \cf0 Index
+\b0 \cell 
+\pard\intbl\itap1\tx720\pardeftab720
+
+\b \cf0 Value
+\b0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth900\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9720\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\qc
+\cf0 0\cell 
+\pard\intbl\itap1\tx720\pardeftab720
+
+\i \cf0 Trigger - Non-zero value triggers playback.  Zero value stops playback.
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth900\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9720\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\qc
+\cf0 1\cell 
+\pard\intbl\itap1\tx720\pardeftab720
+
+\i \cf0 Filename (text string).  File to play.  Program must be in the same directory as the file.
+\i0 \cell \row
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trbrdrl\brdrnil \trbrdrt\brdrnil \trbrdrr\brdrnil 
+\clvertalc \clshdrawnil \clwWidth900\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx4320
+\clvertalc \clshdrawnil \clwWidth9720\clftsWidth3 \clbrdrt\brdrs\brdrw20\brdrcf4 \clbrdrl\brdrs\brdrw20\brdrcf4 \clbrdrb\brdrs\brdrw20\brdrcf4 \clbrdrr\brdrs\brdrw20\brdrcf4 \clpadl100 \clpadr100 \gaph\cellx8640
+\pard\intbl\itap1\tx720\pardeftab720\qc
+\cf0 2\cell 
+\pard\intbl\itap1\tx720\pardeftab720\li4\fi-5
+
+\i \cf0 Amplitude (0 - 100).  Default is 100.
+\i0 \cell \lastrow\row
+\pard\tx720\pardeftab720
+\cf0 \
+}

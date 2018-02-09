@@ -35,6 +35,8 @@
 //      Added audio support: commands DRUM, NOTE, WAV and function PLAYING?.
 //      Added keyword RENUM (unimplemented now).  Changed UPDIR and DNDIR to
 //      be able to be program statements.  Enabled Autorun functionality.
+// v1.1 : 2018-02-08
+//      Fixed bug in NEW when run from program.
 //
 ////////////////////////////////////////////////////////////////////////////////
 #include <Audio.h>
@@ -174,17 +176,13 @@ struct stack_gosub_frame {
 //       first matched string.
 static const unsigned char keywords[] PROGMEM = {
   'L', 'I', 'S', 'T' + 0x80,
-#ifndef DEMO_MODE
   'H', 'L', 'I', 'S', 'T' + 0x80,
   'P', 'L', 'I', 'S', 'T' + 0x80,
-#endif
   'L', 'O', 'A', 'D' + 0x80,
   'N', 'E', 'W' + 0x80,
   'R', 'U', 'N' + 0x80,
-#ifndef DEMO_MODE
   'S', 'A', 'V', 'E' + 0x80,
   'E', 'R', 'A', 'S', 'E' + 0x80,
-#endif
   'N', 'E', 'X', 'T' + 0x80,
   'L', 'E', 'T' + 0x80,
   'I', 'F' + 0x80,
@@ -199,10 +197,8 @@ static const unsigned char keywords[] PROGMEM = {
   'P', 'C', 'H', 'R' + 0x80,
   'I', 'N', 'C', 'H', 'R' + 0x80,
   'C', 'U', 'R', 'S', 'O', 'R' + 0x80,
-#ifndef DEMO_MODE
   'I', 'N', 'S', 'R', 'C' + 0x80,
   'O', 'U', 'T', 'D', 'S', 'T' + 0x80,
-#endif
   'D', 'A', 'T', 'A', '@' + 0x80,
   'P', 'O', 'K', 'E' + 0x80,
   'S', 'T', 'O', 'P' + 0x80,
@@ -212,10 +208,8 @@ static const unsigned char keywords[] PROGMEM = {
   'C', 'L', 'S' + 0x80,
   '?' + 0x80,
   '\'' + 0x80,
-#ifndef DEMO_MODE
   'A', 'W', 'R', 'I', 'T', 'E' + 0x80,
   'D', 'W', 'R', 'I', 'T', 'E' + 0x80,
-#endif
   'D', 'E', 'L', 'A', 'Y' + 0x80,
   'D', 'R', 'U', 'M' + 0x80,
   'N', 'O', 'T', 'E' + 0x80,
@@ -224,12 +218,10 @@ static const unsigned char keywords[] PROGMEM = {
   'R', 'S', 'E', 'E', 'D' + 0x80,
   'C', 'H', 'A', 'I', 'N' + 0x80,
   'R', 'E', 'B', 'O', 'O', 'T' + 0x80,
-#ifndef DEMO_MODE
   'M', 'K', 'D', 'I', 'R' + 0x80,
   'R', 'M', 'D', 'I', 'R' + 0x80,
   'D', 'N', 'D', 'I', 'R' + 0x80,
   'U', 'P', 'D', 'I', 'R' + 0x80,
-#endif
   'H', 'E', 'L', 'P' + 0x80,
   'R', 'E', 'N', 'U', 'M' + 0x80,
   0
@@ -239,17 +231,13 @@ static const unsigned char keywords[] PROGMEM = {
 // above and below simultaneously to selectively obliterate functionality.
 enum {
   KW_LIST = 0,
-#ifndef DEMO_MODE
   KW_HLIST,
   KW_PLIST,
-#endif
   KW_LOAD,
   KW_NEW,
   KW_RUN,
-#ifndef DEMO_MODE
   KW_SAVE,
   KW_ERASE,
-#endif
   KW_NEXT,
   KW_LET,
   KW_IF,
@@ -264,10 +252,8 @@ enum {
   KW_PCHR,
   KW_INCHR,
   KW_CURSOR,
-#ifndef DEMO_MODE
   KW_INSRC,
   KW_OUTDST,
-#endif
   KW_DATA,
   KW_POKE,
   KW_STOP,
@@ -277,10 +263,8 @@ enum {
   KW_CLS,
   KW_QMARK,
   KW_QUOTE,
-#ifndef DEMO_MODE
   KW_AWRITE,
   KW_DWRITE,
-#endif
   KW_DELAY,
   KW_DRUM,
   KW_NOTE,
@@ -289,12 +273,10 @@ enum {
   KW_RSEED,
   KW_CHAIN,
   KW_REBOOT,
-#ifndef DEMO_MODE
   KW_MKDIR,
   KW_RMDIR,
   KW_DNDIR,
   KW_UPDIR,
-#endif
   KW_HELP,
   KW_RENUM,
   KW_DEFAULT /* always the final one*/
@@ -303,10 +285,8 @@ enum {
 static const unsigned char func_tab[] PROGMEM = {
   'P', 'E', 'E', 'K' + 0x80,
   'A', 'B', 'S' + 0x80,
-#ifndef DEMO_MODE
   'A', 'R', 'E', 'A', 'D' + 0x80,
   'D', 'R', 'E', 'A', 'D' + 0x80,
-#endif
   'R', 'N', 'D' + 0x80,
   'P', 'E', 'N', 'D' + 0x80,
   'A', 'S', 'C' + 0x80,
@@ -314,15 +294,6 @@ static const unsigned char func_tab[] PROGMEM = {
   0
 };
 
-#ifdef DEMO_MODE
-#define FUNC_PEEK    0
-#define FUNC_ABS     1
-#define FUNC_RND     2
-#define FUNC_PEND    3
-#define FUNC_ASC     4
-#define FUNC_PLAYING 5
-#define FUNC_UNKNOWN 6
-#else
 #define FUNC_PEEK    0
 #define FUNC_ABS     1
 #define FUNC_AREAD   2
@@ -332,7 +303,6 @@ static const unsigned char func_tab[] PROGMEM = {
 #define FUNC_ASC     6
 #define FUNC_PLAYING 7
 #define FUNC_UNKNOWN 8
-#endif
 
 static const unsigned char to_tab[] PROGMEM = {
   'T', 'O' + 0x80,
@@ -393,11 +363,7 @@ static const unsigned char okmsg[]            PROGMEM = "OK";
 static const unsigned char whatmsg[]          PROGMEM = "What? ";
 static const unsigned char howmsg[]           PROGMEM = "How?";
 static const unsigned char sorrymsg[]         PROGMEM = "Sorry!";
-#ifdef DEMO_MODE
-static const unsigned char initmsg[]          PROGMEM = "Tiny Basic " kTbVersion;
-#else
 static const unsigned char initmsg[]          PROGMEM = "TinyBasic Plus " kTbVersion;
-#endif
 static const unsigned char memorymsg[]        PROGMEM = " bytes free.";
 static const unsigned char breakmsg[]         PROGMEM = "break!";
 static const unsigned char unimplimentedmsg[] PROGMEM = "Unimplemented";
@@ -463,7 +429,7 @@ char expanded_wavfile_name[kMaxDirLevels*kMaxFilenameLen+1];
 
 
 #ifdef DEMO_MODE
-const int tb_timeoutSecs = 600;
+const int tb_timeoutSecs = 7200;
 unsigned long tb_lastKeyPressT;
 boolean tb_sawUserActivity;
 #endif
@@ -928,7 +894,6 @@ static short int expr4(void)
           return -a;
         return a;
 
-#ifndef DEMO_MODE
       case FUNC_AREAD:
         if ((a < 0) || (a >= kNumAnalogIO)) {
           return(0);
@@ -944,7 +909,6 @@ static short int expr4(void)
           pinMode( digitalIOpins[a], INPUT );
           return digitalRead( digitalIOpins[a] );
         }
-#endif
 
       case FUNC_RND:
         return ( random( a ));
@@ -1324,12 +1288,10 @@ interperateAtTxtpos:
       goto files;
     case KW_LIST:
       goto list;
-#ifndef DEMO_MODE
     case KW_HLIST:
       goto hlist;
     case KW_PLIST:
       goto plist;
-#endif
     case KW_CHAIN:
       goto chain;
     case KW_LOAD:
@@ -1342,10 +1304,10 @@ interperateAtTxtpos:
       if (txtpos[0] != NL)
         goto qwhat;
       program_end = program_start;
+      current_line = 0;
       goto prompt;
     case KW_REBOOT:
         ResetTeensy();
-#ifndef DEMO_MODE
     case KW_MKDIR:
       goto mk_dir;
     case KW_RMDIR:
@@ -1354,16 +1316,13 @@ interperateAtTxtpos:
       goto dn_dir;
     case KW_UPDIR:
       goto up_dir;
-#endif
     case KW_RUN:
       current_line = program_start;
       goto execline;
-#ifndef DEMO_MODE
     case KW_SAVE:
       goto save;
     case KW_ERASE:
       goto del_file;
-#endif
     case KW_NEXT:
       goto next;
     case KW_LET:
@@ -1407,12 +1366,10 @@ interperateAtTxtpos:
       goto input_char;
     case KW_CURSOR:
       goto set_cursor;
-#ifndef DEMO_MODE
     case KW_INSRC:
       goto set_input;
     case KW_OUTDST:
       goto set_output;
-#endif
     case KW_DATA:
       goto load_data;
     case KW_POKE:
@@ -1428,14 +1385,12 @@ interperateAtTxtpos:
     case KW_BYE:
       // Leave the basic interpreter
       return;
-#ifndef DEMO_MODE
     case KW_AWRITE:  // AWRITE <pin>, HIGH|LOW
       isDigital = false;
       goto awrite;
     case KW_DWRITE:  // DWRITE <pin>, HIGH|LOW
       isDigital = true;
       goto dwrite;
-#endif
     case KW_RSEED:
       goto rseed;
     case KW_DEFAULT:
@@ -2072,7 +2027,6 @@ cls:
   outchar('J');
   goto run_next_statement;
 
-#ifndef DEMO_MODE
 awrite: // AWRITE <pin>,val
 dwrite:
   {
@@ -2133,7 +2087,6 @@ dwrite:
     }
   }
   goto run_next_statement;
-#endif
 
 files:
   // display a listing of files on the device.
@@ -2171,7 +2124,6 @@ load:
   }
   goto warmstart;
 
-#ifndef DEMO_MODE
 save:
   // save from memory out to a file
   {
@@ -2327,7 +2279,6 @@ up_dir:
   // Move out of current directory
   if (cur_dir_level > 0) cur_dir_level--;
   goto run_next_statement;
-#endif
   
 rseed:
   {
@@ -2596,11 +2547,9 @@ print_help:
     printmsgNoNL(helpRelopMsg);
     print_table(relop_tab);
     line_terminator();
-#ifndef DEMO_MODE
     printmsgNoNL(helpLogicLvlMsg);
     print_table(highlow_tab);
     line_terminator();
-#endif
   }
   goto run_next_statement;
 }

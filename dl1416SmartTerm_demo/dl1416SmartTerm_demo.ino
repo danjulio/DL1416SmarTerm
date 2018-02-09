@@ -187,7 +187,7 @@
  *  behavior.
  *
  *
- * Copyright (c) 2016-2017 Dan Julio
+ * Copyright (c) 2016-2018 Dan Julio
  * All rights reserved.
  * Released as open source in hopes that it may be helpful to someone else.  No warranties or other guarantees.
  *
@@ -208,6 +208,10 @@
  *                                       Eliza program in terminal mode (terminal evaluates
  *                                         in background).
  *                                       Inactivity timeouts to display an inviting message.
+ *   2.2     02-08-2018    DJD         Re-enabled all Tiny Basic commands in demo mode.
+ *                                     Increased demo reset timeout in Tiny Basic mode to
+ *                                     2 hours.  Fixed bug in Tiny Basic NEW command when run
+ *                                     from program.
  *  
  * ******************************************************************************************/
 

@@ -7,7 +7,7 @@ DL1416B intelligent LED modules controlled by firmware running on PIC micro-cont
 and a keyboard with a serial output.  The code is compiled using the Teensy Arduino
 environment.
 
-It provides both a VT102-ish compatible terminal and Tiny Basic (based on Scott
+It provides both a VT102/220-ish compatible terminal and Tiny Basic (based on Scott
 Lawrence's version of Mike Field's port) selectable by switch (digital input) with
 printer support and a host interface over both a TTL serial port or a USB CDC class
 serial interface.  Tiny Basic provides 9 IO ports for user access, each including both
@@ -19,6 +19,12 @@ help some other project, for example a terminal driving some off-the-shelf intel
 LCD display and PS2 keyboard or even (I hope, someday) a Teensy with a built-in driver
 for NTSC/PAL or VGA output.
 
-###Questions?
+## Demo Directory
+
+The demo folder (and associated document) contains a version of the code designed for
+the computer to be run in an exhibition mode.  It removes some Tiny BASIC functions
+and substitues an implementation of the famous AI ELIZA program for terminal mode.
+
+### Questions?
 
 Contact the author @ dan@danjuliodesigns.com

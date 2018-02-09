@@ -198,6 +198,8 @@
  *   2.0     10-20-2017    DJD         Added sound capability to Tiny Basic using the
  *                                     Teensy 3 audio library (see tiny_basic.ino for
  *                                     details).  Incremented Tiny Basic version to 1.0.
+ *   2.1     02-08-2018    DJD         Fixed bug in Tiny Basic NEW command when run from
+ *                                     program.
  *  
  * ******************************************************************************************/
 

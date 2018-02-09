@@ -35,6 +35,8 @@
 //      Added audio support: commands DRUM, NOTE, WAV and function PLAYING?.
 //      Added keyword RENUM (unimplemented now).  Changed UPDIR and DNDIR to
 //      be able to be program statements.  Enabled Autorun functionality.
+// v1.1 : 2018-02-08
+//      Fixed bug in NEW when run from program.
 //
 ////////////////////////////////////////////////////////////////////////////////
 #include <Audio.h>
@@ -60,7 +62,7 @@
 // Constants...
 
 // Version
-#define kTbVersion      "v1.0"
+#define kTbVersion      "v1.1"
 
 // Memory available to Tiny Basic
 #define kRamSize  (kTinyBasicRam-1)
@@ -1292,6 +1294,7 @@ interperateAtTxtpos:
       if (txtpos[0] != NL)
         goto qwhat;
       program_end = program_start;
+      current_line = 0;
       goto prompt;
     case KW_REBOOT:
         ResetTeensy();

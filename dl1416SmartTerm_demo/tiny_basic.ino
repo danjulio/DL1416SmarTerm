@@ -37,6 +37,9 @@
 //      be able to be program statements.  Enabled Autorun functionality.
 // v1.1 : 2018-02-08
 //      Fixed bug in NEW when run from program.
+// v1.2 : 2018-10-15
+//      Modified DEMO_MODE support to run "demorun.bas" file and indicate demo
+//      mode in sign-on message.  Shortened demo timeout to 10 minutes.
 //
 ////////////////////////////////////////////////////////////////////////////////
 #include <Audio.h>
@@ -51,18 +54,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Feature option configuration...
 
-// this turns on "autorun".  if there's FileIO, and a file "autorun.bas",
+// this turns on "autorun".  if there's FileIO, and a file "autorun.bas" or "demorun.bas",
 // then it will load it and run it when starting up
 #define ENABLE_AUTORUN 1
 //#undef ENABLE_AUTORUN
 // and this is the file that gets run
+#ifdef DEMO_MODE
+#define kAutorunFilename  "demorun.bas"
+#else
 #define kAutorunFilename  "autorun.bas"
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constants...
 
 // Version
-#define kTbVersion      "v1.1"
+#define kTbVersion      "v1.2"
 
 // Memory available to Tiny Basic
 #define kRamSize  (kTinyBasicRam-1)
@@ -364,6 +371,7 @@ static const unsigned char whatmsg[]          PROGMEM = "What? ";
 static const unsigned char howmsg[]           PROGMEM = "How?";
 static const unsigned char sorrymsg[]         PROGMEM = "Sorry!";
 static const unsigned char initmsg[]          PROGMEM = "TinyBasic Plus " kTbVersion;
+static const unsigned char demomsg[]          PROGMEM = "Demo Mode - Resets after 10 min inactivity";
 static const unsigned char memorymsg[]        PROGMEM = " bytes free.";
 static const unsigned char breakmsg[]         PROGMEM = "break!";
 static const unsigned char unimplimentedmsg[] PROGMEM = "Unimplemented";
@@ -429,7 +437,8 @@ char expanded_wavfile_name[kMaxDirLevels*kMaxFilenameLen+1];
 
 
 #ifdef DEMO_MODE
-const int tb_timeoutSecs = 7200;
+// Timeout variables for demo mode
+const int tb_timeoutSecs = 600;
 unsigned long tb_lastKeyPressT;
 boolean tb_sawUserActivity;
 #endif
@@ -1099,7 +1108,7 @@ prompt:
     current_line = program_start;
     goto execline;
   }
-  
+
 #ifdef DEMO_MODE
   tb_lastKeyPressT = millis();
 #endif
@@ -2567,6 +2576,9 @@ void tb_setup()
   output_mask = OUTPUT_MASK_SCREEN;
   input_mask = TB_INPUT_MASK_KEYBOARD;
   printmsg(initmsg);
+#ifdef DEMO_MODE
+  printmsg(demomsg);
+#endif
 
   initSD();
   cur_dir_level = 0;
@@ -2588,13 +2600,11 @@ void tb_setup()
 #endif
 }
 
-#ifdef DEMO_MODE
-void tb_setup_for_eliza()
+void tb_setup_for_virtual_host()
 {
   output_mask = OUTPUT_MASK_SCREEN;
   input_mask = TB_INPUT_MASK_KEYBOARD;
 }
-#endif
 
 
 /***************************************************************************/
@@ -2648,6 +2658,7 @@ static int inchar()
           }
         }
 #endif
+
         delay(1);  // necessary or this code will never execute (optimized away somehow?)
       }
   }
@@ -2961,7 +2972,4 @@ void print_audio_statistics()
   AudioProcessorUsageMaxReset();
   AudioMemoryUsageMaxReset();
 }
-
-
-
 

@@ -2,7 +2,7 @@
  *  Persistent Storage - Initialization and access routines for configuration information
  *  stored in the internal eeprom.
  *  
- *  * LAYOUT
+ *  LAYOUT
  *     Offset   Length    Description
  *     -------------------------------------------------------------------------------
  *         0        2     Magic Bytes - Indicates EEPROM storage has been initialized
@@ -15,6 +15,8 @@
  *         10       1     CR/LF Handling (Convert either to CR+LF=1, Individual=0) - Applies
  *                        to terminal mode only
  *         11       1     Line Wrap (Enable = 1, Disable = 0) - Applies to terminal mode only
+ *         12       1     Terminal Functionality (Terminal = 0, Eliza = 1) - Applies to terminal
+ *                        mode only
  *  
  * ******************************************************************************************/
 #include <EEPROM.h>
@@ -28,7 +30,7 @@
 // initialize EEPROM one time.  The Magic Bytes let the module "know" the EEPROM has
 // already been initialized.  The value of the Magic Bytes must change if the EEPROM
 // layout or contents change in a future firmware revision.
-#define PS_MAGIC_BYTES    0xFACE
+#define PS_MAGIC_BYTES    0xBEEF
 #define PS_MB_ADDR        0x0000
 #define PS_MB_LEN         2
 
@@ -70,6 +72,11 @@
 #define PS_LINEWRAP_FD    1
 #define PS_LINEWRAP_ADDR  (PS_CRLF_ADDR + PS_CRLF_LEN)
 #define PS_LINEWRAP_LEN   1
+
+// Terminal Functionality
+#define PS_TERMFUNC_FD    0
+#define PS_TERMFUNC_ADDR  (PS_LINEWRAP_ADDR + PS_LINEWRAP_LEN)
+#define PS_TERMFUNC_LEN   1
 
 
 
@@ -188,6 +195,17 @@ void PsSetLinewrap(boolean en) {
 }
 
 
+kTermFunc PsGetTermFunc() {
+  return ((kTermFunc) EEPROM.read(PS_TERMFUNC_ADDR));
+}
+
+
+void PsSetTermfunc(kTermFunc f) {
+  EEPROM.write(PS_TERMFUNC_ADDR, f);
+}
+
+
+
 // -----------------------------------------------------------------------------------
 // MODULE INTERNAL ROUTINES
 
@@ -227,10 +245,10 @@ void PsRestoreFactoryDefaults() {
   PsCheckAndLoad8(PS_TAB_ADDR, PS_TAB_FD);
   PsCheckAndLoad8(PS_CRLF_ADDR, PS_CRLF_FD);
   PsCheckAndLoad8(PS_LINEWRAP_ADDR, PS_LINEWRAP_FD);
+  PsCheckAndLoad8(PS_TERMFUNC_ADDR, PS_TERMFUNC_FD);
 
   // Finally set the Magic Bytes to indicate a successful restore
   EEPROM.write(PS_MB_ADDR, PS_MAGIC_BYTES >> 8);
   EEPROM.write(PS_MB_ADDR+1, PS_MAGIC_BYTES & 0xFF);
 }
-
 

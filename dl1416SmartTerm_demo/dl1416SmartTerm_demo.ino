@@ -7,6 +7,8 @@
  *  
  *  A switch selects terminal or Tiny Basic computer operation.  While in terminal mode
  *  a configuration menu may be brought up to change terminal operating characteristics.
+ *  In additional to an external host connected to the serial interface, the terminal mode
+ *  supports virtual hosts that simulate an external computer and replace the serial interface.
  *  Ten digital IOs and two analog inputs are available in Tiny Basic mode.  Analog inputs
  *  are referenced to the Teensy's 3.3 volt rail.
  *  
@@ -73,7 +75,7 @@
  *    This program processes the following special control characters sent from the printer
  *    as follows:
  *      CTRL-F ("ACK") to indicate power on
- *      CTRL-U ("NAK") to indicate power off (when arduino still powered by USB)
+ *      CTRL-U ("NAK") to indicate power off (when printer arduino still powered by USB)
  *      CTRL-R ("DC2") to indicate paper present status (when paper is loaded)
  *      CTRL-T ("DC4") to indicate paper out status
  *      
@@ -88,7 +90,7 @@
  *  http://vt100.net/docs/vt102-ug/chapter5.html and should support basic ANSI and VT102/220
  *  sessions.  Other ANSI sequences will be decoded but ignored.
  *    
- *  ANSI Sequences Implemented (numeric arguments in decimal ASCII notation are contained with <>)
+ *  ANSI Sequences Implemented (numeric arguments in decimal ASCII notation are contained within <>)
  *    ESC[<line>;<column>H             Cursor Position
  *    ESC[<line>;<column>f             Horizontal and Vertical Position (same as Cursor Position)
  *    ESC[<value>A                     Cursor Up
@@ -212,6 +214,14 @@
  *                                     Increased demo reset timeout in Tiny Basic mode to
  *                                     2 hours.  Fixed bug in Tiny Basic NEW command when run
  *                                     from program.
+ *   2.3     10-14-2018    DJD         Combined Eliza and terminal functionality into the same
+ *                                     program selected via a terminal menu item.  Support for
+ *                                     future "virtual host" programs.  DEMO_MODE compiler directive
+ *                                     now only controls Tiny Basic inactivity timeout and runs
+ *                                     "DEMORUN.BAS" if it exists instead of "AUTORUN.BAS".  
+ *                                     Shortened Tiny Basic demo timeout to 10 minutes.  This
+ *                                     demo code can replace the main dl1416SmartTerm code
+ *                                     functionality.
  *  
  * ******************************************************************************************/
 
@@ -220,13 +230,13 @@
  *  User configuration constants
  * ******************************************************************************************/
 
-// Special "Maker Made" demo mode
-#define DEMO_MODE 1
+// Uncomment for "Demo Mode" which resets computer after a period of inactivity
+//#define DEMO_MODE 1
 
 // Version - "Major"."Minor"
 //   Major - Major new functionality (user visible)
 //   Minor - bug fixes or modifications to existing functionality
-#define kTermVersion      "v1.1"
+#define kTermVersion      "v2.3"
 
 // Terminal display constants
 #define kNumTermLines     12
@@ -305,6 +315,13 @@ enum kTermMode {
   kModeIsTerm = 0,
   kModeIsTinyBasic,
   kModeIsConfig
+};
+
+
+// Terminal Functionality
+enum kTermFunc {
+  kTermFuncTerm = 0,
+  kTermFuncEliza
 };
 
 
@@ -429,6 +446,7 @@ boolean IsControlChar(char c);
 
 // Terminal State
 enum kTermMode termMode;
+enum kTermFunc termFunc;
 enum kTermProcState termState;
 enum kTermEscState escState;
 int scrollTop;                  // Top line of scroll region
@@ -574,12 +592,9 @@ void setup() {
   TermInit();
   if (termMode == kModeIsTinyBasic) {
     TinyBasicInit();
-  }
-#ifdef DEMO_MODE
-  else {
+  } else if (termFunc == kTermFuncEliza) {
     ElizaInit();
   }
-#endif
 
   // TermEval profiling output
   pinMode(TEENSY_PROFILE_OUT, OUTPUT);
@@ -591,20 +606,18 @@ void setup() {
 void loop() {
   switch(termMode) {
     case kModeIsTerm:
-#ifdef DEMO_MODE
-      ElizaEval();
-#else
-      TermEval();
-#endif
+      if (termFunc == kTermFuncEliza) {
+        ElizaEval();
+      } else {
+        TermEval();
+      }
       break;
     case kModeIsTinyBasic:
       TinyBasicEval();
       break;
-#ifndef DEMO_MODE
     case kModeIsConfig:
       MenuEval();
       break;
-#endif
   }
 }
 
@@ -684,6 +697,7 @@ void TermInit() {
 
   // Initialize terminal state
   termMode = SwitchIsTerminalMode() ? kModeIsTerm : kModeIsTinyBasic;
+  termFunc = PsGetTermFunc();
   termState = kStateIsImm;
   escState = kStateEscIdle;
   scrollTop = 0;
@@ -746,13 +760,10 @@ void TermInit() {
   if (termMode == kModeIsTinyBasic) {
     // Setup terminal evaluation in the background (Tiny Basic will evaluate as main process)
     termSchedulerObj.begin(TermEval,  TERM_SCHEDULE_PERIOD);
-  }
-#ifdef DEMO_MODE
-  if (termMode == kModeIsTerm) {
-    // Setup terminal evaluation in the background (Eliza will evaluate as main process)
+  } else if (termFunc != kTermFuncTerm) {
+    // Setup terminal evaluation in the background (virtual host will evaluate as main process)
     termSchedulerObj.begin(TermEval,  TERM_SCHEDULE_PERIOD);
   }
-#endif
 }
 
 
@@ -784,13 +795,8 @@ void TermEval() {
   //    All others - throw away
   //  Update display with all other characters
   valid = false;
-#ifdef DEMO_MODE
-  if ((termMode == kModeIsTinyBasic) || (termMode == kModeIsTerm))
-#else
-  if (termMode == kModeIsTinyBasic)
-#endif
-    {
-    // Look for data from tiny basic to our terminal
+  if ((termMode == kModeIsTinyBasic) || ((termMode == kModeIsTerm) && (termFunc != kTermFuncTerm))) {
+    // Look for data from tiny basic or a virtual host to our terminal
     if (tinyBasicRxNum > 0) {
       c = PEEK_TB_RX();
       valid = true;
@@ -872,12 +878,7 @@ void TermEval() {
   }
   // Pop if we successfully processed the character (because valid is still set here)
   if (valid) {
-#ifdef DEMO_MODE
-    if ((termMode == kModeIsTinyBasic) || (termMode == kModeIsTerm))
-#else
-    if (termMode == kModeIsTinyBasic)
-#endif
-    {
+    if ((termMode == kModeIsTinyBasic) || ((termMode == kModeIsTerm) && (termFunc != kTermFuncTerm))) {
       POP_TB_RX();
     } else {
       if (lastRxPort == 1) {
@@ -892,13 +893,9 @@ void TermEval() {
   }
 
   // -----------------------------------------------------------------------------------------------
-  // Look for data to send to Tiny Basic from any selected host source (otherwise it is silently tossed)
-#ifdef DEMO_MODE
-  if ((termMode == kModeIsTinyBasic) || (termMode == kModeIsTerm))
-#else
-  if (termMode == kModeIsTinyBasic)
-#endif
-  {
+  // Look for data to send to Tiny Basic or virtual host from any selected host source (otherwise it is
+  // silently tossed)
+  if ((termMode == kModeIsTinyBasic) || ((termMode == kModeIsTerm) && (termFunc != kTermFuncTerm))) {
     if (hostRxNum1 > 0) {
       c = PEEK_HOST_RX1();
       if ((GetInputMask() & TB_INPUT_MASK_USB_HOST) == TB_INPUT_MASK_USB_HOST) {
@@ -964,12 +961,7 @@ void TermEval() {
   // Process outgoing data (from terminal to host or tiny basic)
   if (termOutputNum > 0) {
     c = PEEK_TERM_OUT();
-#ifdef DEMO_MODE
-    if ((termMode == kModeIsTinyBasic) || (termMode == kModeIsTerm))
-#else
-    if (termMode == kModeIsTinyBasic)
-#endif
-    {
+    if ((termMode == kModeIsTinyBasic) || ((termMode == kModeIsTerm) && (termFunc != kTermFuncTerm))) {
       if (!TB_TX_FULL()) {
         // Send to tiny basic
         PUSH_TB_TX(c);
@@ -995,12 +987,7 @@ void TermEval() {
   //
   if (Serial2.available()) {
     valid = true;  // Assume there will be room
-#ifdef DEMO_MODE
-    if ((termMode == kModeIsTinyBasic) || (termMode == kModeIsTerm))
-#else
-    if (termMode == kModeIsTinyBasic)
-#endif
-    {
+    if ((termMode == kModeIsTinyBasic) || ((termMode == kModeIsTerm) && (termFunc != kTermFuncTerm))) {
       if (TB_TX_FULL()) {
         valid = false;
       }
@@ -1019,23 +1006,16 @@ void TermEval() {
           c = ESC;
         }
       } else if (c == SO) {
-#ifndef DEMO_MODE
         if (termMode == kModeIsTerm) {
           // Bring up the menu when we're in terminal mode
           termMode = kModeIsConfig;
           MenuInit();
         }
-#endif
       }
 
       // Push into appropriate buffers
-#ifdef DEMO_MODE
-      if ((termMode == kModeIsTinyBasic) || (termMode == kModeIsTerm))
-#else
-      if (termMode == kModeIsTinyBasic)
-#endif
-      {
-        // Send to tiny basic if enabled
+      if ((termMode == kModeIsTinyBasic) || ((termMode == kModeIsTerm) && (termFunc != kTermFuncTerm))) {
+        // Send to tiny basic or virtual host if enabled
         if ((GetInputMask() & TB_INPUT_MASK_KEYBOARD) == TB_INPUT_MASK_KEYBOARD) {
           PUSH_TB_TX(c);
         }
@@ -1075,12 +1055,7 @@ void TermEval() {
   // -----------------------------------------------------------------------------------------------
   // See if there is data to send to the DL1416 displays and if it's time
   if (dl1416Num != 0) {
-#ifdef DEMO_MODE
-    if ((termMode == kModeIsTinyBasic) || (termMode == kModeIsTerm))
-#else
-    if (termMode == kModeIsTinyBasic)
-#endif
-    {
+    if ((termMode == kModeIsTinyBasic) || ((termMode == kModeIsTerm) && (termFunc != kTermFuncTerm))) {
       // Just send the character immediately since we are being timesliced already
         c = PEEK_DL1416();
         POP_DL1416();
@@ -1190,7 +1165,6 @@ void TinyBasicEval() {
 }
 
 
-#ifdef DEMO_MODE
 void ElizaInit() {
   // Configure for Eliza operation
   termConvertCRLF = true;
@@ -1201,14 +1175,13 @@ void ElizaInit() {
   tinyBasicTxPushI = 0;
   tinyBasicTxPopI = 0;
   tinyBasicTxNum = 0;
-  tb_setup_for_eliza();
+  tb_setup_for_virtual_host();
   eliza_setup();
 }
 
 void ElizaEval() {
   eliza_loop();
 }
-#endif
 
 
 void DisplayCharacter(char c) {
@@ -2612,7 +2585,16 @@ boolean InactivityTimeout(unsigned long prevT, unsigned long timeout) {
 }
 
 
-#ifdef DEMO_MODE
+/* *****************************************************************************
+ * InactivityTimeoutMsec - Return true if the current timestamp is greater than 
+ * a specified timeout from the last timestamp.  Handle the base platform
+ * roll-over in its time function.
+ *
+ * On entry: prevT contains the previous timestamp (in milli-seconds)
+ *           timeout contains the specified timeout to compare
+ *
+ * On exit: True if timeout has expired since prevT, false otherwise
+ **************************************************************************** */
 boolean InactivityTimeoutMsec(unsigned long prevT, unsigned long timeout) {
   unsigned long curT = millis();
   unsigned long deltaT;
@@ -2626,7 +2608,6 @@ boolean InactivityTimeoutMsec(unsigned long prevT, unsigned long timeout) {
   
   return (deltaT >= timeout);
 }
-#endif
 
 
 /* *****************************************************************************

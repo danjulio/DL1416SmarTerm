@@ -4,7 +4,7 @@
     only source I could find to download to make copying the strings easy...).
 
  * ******************************************************************************************/
-#ifdef DEMO_MODE
+ 
 
 // ===========================================================================================
 // Constants
@@ -573,4 +573,3 @@ char* e_LEFT$(char* s, int len)
   return (leftArray);
 }
 
-#endif

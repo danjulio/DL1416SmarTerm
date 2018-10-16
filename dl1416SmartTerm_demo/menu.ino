@@ -37,8 +37,8 @@
 #define kItemChangedCol  kValueCol-1
 
 // Row positions
-#define kHeaderRow       1
-#define kMenuStartRow    3
+#define kHeaderRow       0
+#define kMenuStartRow    2
 
 // Row selection indicator
 #define kSelector        '>'
@@ -54,7 +54,7 @@ static const char headerText[] PROGMEM = "TERMINAL CONFIGURATION MENU    FW: " k
 // -----------------------------------------------------------------------------------
 // MENU CONTENTS
 
-#define kNumMenuItems  8
+#define kNumMenuItems  9
 
 static const char itemText1[] PROGMEM = "HOST IF BAUD";
 static const char itemText2[] PROGMEM = "PRINTER BAUD";
@@ -64,9 +64,10 @@ static const char itemText5[] PROGMEM = "CURSOR TYPE";
 static const char itemText6[] PROGMEM = "DEFAULT TAB WIDTH";
 static const char itemText7[] PROGMEM = "CR/LF HANDLING";
 static const char itemText8[] PROGMEM = "LINE WRAP";
+static const char itemText9[] PROGMEM = "TERM FUNCTIONALITY";
 
 static const char* itemTextList[] PROGMEM = {
-  itemText1, itemText2, itemText3, itemText4, itemText5, itemText6, itemText7, itemText8
+  itemText1, itemText2, itemText3, itemText4, itemText5, itemText6, itemText7, itemText8, itemText9
 };
 
 
@@ -171,6 +172,18 @@ static const char* item8ValTextList[] PROGMEM = {
 };
 
 static const int item8ValList[] = {1, 0};
+
+
+// Menu Item 9 value
+#define kNumMenu9Items 2
+static const char item9ValText1[] PROGMEM = "TERM ";
+static const char item9ValText2[] PROGMEM = "ELIZA";
+
+static const char* item9ValTextList[] PROGMEM = {
+  item9ValText1, item9ValText2
+};
+
+static const int item9ValList[] = {0, 1};
 
 
 
@@ -374,6 +387,21 @@ void MenuInitEntryArray() {
   menuEntryArray[7].curVal = t;
   menuEntryArray[7].newVal = t;
   menuEntryArray[7].changed = false;
+
+  // Item 9: Terminal Functionality
+  t = PsGetTermFunc();
+  n = MenuFindItemFromValue(t, kNumMenu9Items, item9ValList);
+  menuEntryArray[8].numItems = kNumMenu9Items;
+  menuEntryArray[8].itemTextAPtr = item9ValTextList;
+  menuEntryArray[8].itemValAPtr = item9ValList;
+  if (n >= 0) {
+    menuEntryArray[8].curSel = n;
+  } else {
+    menuEntryArray[8].curSel = kNumMenu9Items-1;
+  }
+  menuEntryArray[8].curVal = t;
+  menuEntryArray[8].newVal = t;
+  menuEntryArray[8].changed = false;
 }
 
 
@@ -431,6 +459,9 @@ void MenuUpdatePersistentStorage() {
           break;
         case 7:
           PsSetLinewrap(menuEntryArray[i].newVal == 1 ? true : false);
+          break;
+        case 8:
+          PsSetTermfunc((kTermFunc) menuEntryArray[i].newVal);
           break;
       }
     }

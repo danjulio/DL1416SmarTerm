@@ -18,6 +18,8 @@ for NTSC/PAL or VGA output.
 
 The demo folder (and associated document) contains a version of the code designed for the computer to be run in an exhibition mode.  It now supports the idea of virtual hosts that interact with the terminal instead of a real host connected to USB or RS232.  It supports two virtual hosts. 1) an implementation of the famous AI ELIZA program for terminal mode and 2) an implementation of the BSD banner.c program for generating ASCII banners on a printer. The ELIZA module may be ported to other projects.  Virtual hosts are selected from the terminal's menu.
 
+![Banner](pictures/dl1416st_banner.png)
+
 The demo directory supercedes the mainline code including fixes that aren't being backported to the original code.  It includes a compiler directive (DEMO_MODE) that causes Tiny Basic to try to load a program "DEMORUN.BAS" on boot and also resets after a period of inactivity.
 
 ### Questions?

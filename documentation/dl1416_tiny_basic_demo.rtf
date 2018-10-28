@@ -14,7 +14,7 @@
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\qc
 
 \f0\fs28 \cf0 DL1416SmartTerm Tiny Basic\
-Version 1.1 - Demo Mode
+Version 1.2 - Demo Mode
 \fs24 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
 \cf0 \
@@ -30,7 +30,7 @@ The EOT key is used as BREAK to stop execution of a Tiny Basic program.\
 \
 File names follow the 8.3 rule (a maximum of 8 filename characters and 3 file type characters which should be .BAS for Tiny Basic programs).  This version of Tiny Basic is limited to 16 levels of directories on the SD card.  A file called \'93AUTORUN.BAS\'94 that exists at the top level of the filesystem will be executed if it exists when Tiny Basic starts up.\
 \
-Tiny Basic in Demo Mode restarts after 2 hours of inactivity.\
+Tiny Basic, when compiled with the DEMO_MODE compiler directive, restarts after 10 minutes of inactivity.  In addition it runs the \'93DEMORUN.BAS\'94 file on startup instead.\
 \
 \pard\pardeftab720\sl440\sa320
 
@@ -69,10 +69,10 @@ Tiny Basic in Demo Mode restarts after 2 hours of inactivity.\
 \i clear screen\
 \ls1\ilvl0
 \i0 {\listtext	\'95	}INSRC mask expression - 
-\i sets input (keyboard: bit 0, usb host: bit 1, serial host: bit 2, printer port: bit 3) defaults to keyboard + usb host (1 + 2 = 3).  Be careful to not lock yourself out.
+\i sets input (keyboard: bit 0, usb host: bit 1, serial host: bit 2, printer port: bit 3) defaults to keyboard .  To add usb host (1 + 2 = 3).  Be careful to not lock yourself out.
 \i0 \
 {\listtext	\'95	}OUTDST mask expression - 
-\i sets output (screen: bit 0, usb host: bit 1, serial host: bit 2, printer port: bit 3) defaults to screen + usb host (1 + 2 = 3)\
+\i sets output (screen: bit 0, usb host: bit 1, serial host: bit 2, printer port: bit 3) defaults to screen.  To add usb host (1 + 2 = 3)\
 \ls1\ilvl0
 \i0 {\listtext	\'95	}REBOOT - 
 \i reset computer (deletes current program)\

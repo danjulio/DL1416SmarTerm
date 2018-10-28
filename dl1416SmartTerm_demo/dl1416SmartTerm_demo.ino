@@ -82,6 +82,9 @@
  *    It should work with other serial printers but will not collect status or provide the ability
  *    to quickly reset the printer (other than possible printer-specific escape sequences).
  *    
+ *    Banner attempts to use the serial_2_parallel CTRL-W ("ETB") character to mark individual 
+ *    characters so that the EOT cancellation of a print job will have less latency.
+ *    
  *  Serial Port Flow Control
  *    Host USB/Serial1 interfaces send XON/XOFF on their TX ports (configurable)
  *    Printer Serial3 interface interprets XON/XOFF on its RX port
@@ -222,6 +225,11 @@
  *                                     Shortened Tiny Basic demo timeout to 10 minutes.  This
  *                                     demo code can replace the main dl1416SmartTerm code
  *                                     functionality.
+ *   2.4     10-28-2018    DJD         Added "banner" virtual host to terminal.  Cleanup some code
+ *                                     (replaced delay(1) in various places with yield(), fixed
+ *                                     longstanding mistake with serialEvent3).  Added yield()
+ *                                     after loading characters into TX buffers in Tiny Basic
+ *                                     to make sure we see any incoming flow-control.
  *  
  * ******************************************************************************************/
 
@@ -236,7 +244,7 @@
 // Version - "Major"."Minor"
 //   Major - Major new functionality (user visible)
 //   Minor - bug fixes or modifications to existing functionality
-#define kTermVersion      "v2.3"
+#define kTermVersion      "v2.4"
 
 // Terminal display constants
 #define kNumTermLines     12
@@ -292,6 +300,7 @@
 #define NACK    0x15
 #define XON     0x11
 #define XOFF    0x13
+#define ETB     0x17
 #define CAN     0x18
 #define SUB     0x1a
 #define ESC     0x1b
@@ -321,7 +330,8 @@ enum kTermMode {
 // Terminal Functionality
 enum kTermFunc {
   kTermFuncTerm = 0,
-  kTermFuncEliza
+  kTermFuncEliza,
+  kTermFuncBanner
 };
 
 
@@ -423,6 +433,9 @@ boolean IsControlChar(char c);
 
 #define PRT_ONLINE()      (printerOn == true)
 #define PRT_PAPER_OUT()   (printerPaperOut == true)
+#define PRT_CLR_ETB_FLG() (printerSawETB = false)
+#define PRT_SET_ETB_FLG() (printerSawETB = true)
+#define PRT_SAW_ETB()     (printerSawETB == true)
 
 
 // Value to write to AIRCR to reset the CPU - must spin after writing this value
@@ -469,6 +482,7 @@ boolean printerInFc;            // Set to true when the printer IF is in flow co
 boolean printerOn;              // Set to false by default and when we detect the printer turned back on after being turned off
 boolean printerPaperOut;        // Set to false by default and when we detect the printer tell us it is out of paper; set when it
                                 //   tells us it has paper again
+boolean printerSawETB;          // Set when the printer sends (echos) the ETB character
 boolean enablePrintLog;         // Set to true when sending incoming data to printer instead of display
 boolean enableAutoPrint;        // Set to true when printing each line when the cursor moves off of it
 boolean enablePrintRegion;      // Set to true when the print screen ESC sequence should only print the current scrolling region
@@ -559,7 +573,7 @@ int printerTxPopI;
 int printerTxNum;
 
 
-// Tiny Basic communication buffers
+// Tiny Basic communication buffers (also used for a virtual host to communicate with the terminal)
 //  RX buffer - contains data being sent to the terminal for processing and display
 //  TX buffer - contains data being sent to tiny basic after processing by the terminal
 char tinyBasicRxBuffer[kTinyBasicRxLen];
@@ -574,7 +588,7 @@ int tinyBasicTxPopI;
 int tinyBasicTxNum;
 
 
-// Interval timer to schedule terminal activities so Tiny Basic can take main thread
+// Interval timer to schedule terminal activities so Tiny Basic or a virtual host can take main thread
 //  TERM_SCHEDULE_PERIOD is in uSec
 //
 #define TERM_SCHEDULE_PERIOD 500
@@ -594,6 +608,8 @@ void setup() {
     TinyBasicInit();
   } else if (termFunc == kTermFuncEliza) {
     ElizaInit();
+  } else if (termFunc == kTermFuncBanner) {
+    BannerInit();
   }
 
   // TermEval profiling output
@@ -602,14 +618,18 @@ void setup() {
 }
 
 
-// Each eval routine should execute as quickly as possible (and be non-blocking)
 void loop() {
   switch(termMode) {
     case kModeIsTerm:
-      if (termFunc == kTermFuncEliza) {
-        ElizaEval();
-      } else {
-        TermEval();
+      switch (termFunc) {
+        case kTermFuncEliza:
+          ElizaEval();
+          break;
+        case kTermFuncBanner:
+          BannerEval();
+          break;
+        default:
+          TermEval();
       }
       break;
     case kModeIsTinyBasic:
@@ -649,13 +669,72 @@ void serialEvent1() {
 
 
 // Incoming data from Printer interface
-void SerialEvent3() {
+void serialEvent3() {
   char c;
 
   while (Serial3.available()) {
     c = Serial3.read();
     PUSH_PRT_RX(c & 0x7F);
   }
+}
+
+
+/* ******************************************************************************************
+ *  Additional process subroutines
+ * ******************************************************************************************/
+
+void InnerProcessFifoInit()
+{
+  tinyBasicRxPushI = 0;
+  tinyBasicRxPopI = 0;
+  tinyBasicRxNum = 0;
+  tinyBasicTxPushI = 0;
+  tinyBasicTxPopI = 0;
+  tinyBasicTxNum = 0;
+}
+
+
+void TinyBasicInit() {
+  // Configure for Tiny Basic operation, overwriting some terminal configuration values
+  termConvertCRLF = false;
+  linewrapEn = true;
+  InnerProcessFifoInit();
+  tb_setup();
+}
+
+
+void TinyBasicEval() {
+  tb_loop();
+}
+
+
+void ElizaInit() {
+  // Configure for Eliza operation
+  termConvertCRLF = true;
+  linewrapEn = true;
+  InnerProcessFifoInit();
+  vh_setup();
+  eliza_setup();
+}
+
+
+void ElizaEval() {
+  eliza_loop();
+}
+
+
+void BannerInit() {
+  // Configure for Banner operation
+  termConvertCRLF = true;
+  linewrapEn = false;
+  InnerProcessFifoInit();
+  vh_setup();
+  banner_setup();
+}
+
+
+void BannerEval() {
+  banner_loop();
 }
 
 
@@ -721,6 +800,7 @@ void TermInit() {
   printerInFc = false;
   printerOn = false;
   printerPaperOut = false;
+  printerSawETB = false;
   enablePrintLog = false;
   enableAutoPrint = false;
   enablePrintRegion = false;
@@ -774,14 +854,11 @@ void TermEval() {
   // Profile indicator on
   digitalWrite(TEENSY_PROFILE_OUT, HIGH);
 
-  // Evaluate the mode switch here since Tiny Basic may have taken over the main thread
+  // Evaluate the mode switch here since Tiny Basic or a virtual host may be running as the main thread
   SwitchEval();
 
-  // Look for Serial3 data (Kludge!: At the time of this code, the library didn't seem to implement the Serial3 event)
-  SerialEvent3();
-
   // -----------------------------------------------------------------------------------------------
-  // Process incoming data (to terminal from host or tiny basic)
+  // Process incoming data (to terminal from host, virtual host or tiny basic)
   //  Process control characters
   //    BELL - pass to display
   //    Backspace - backspace our pointer if possible, update display
@@ -802,6 +879,7 @@ void TermEval() {
       valid = true;
     }
   } else {
+    // Data from an external host
     if (hostRxNum1 > 0) {
       c = PEEK_HOST_RX1();
       valid = true;
@@ -958,7 +1036,7 @@ void TermEval() {
   }
 
   // -----------------------------------------------------------------------------------------------
-  // Process outgoing data (from terminal to host or tiny basic)
+  // Process outgoing data (from terminal to host or tiny basic/virtual host)
   if (termOutputNum > 0) {
     c = PEEK_TERM_OUT();
     if ((termMode == kModeIsTinyBasic) || ((termMode == kModeIsTerm) && (termFunc != kTermFuncTerm))) {
@@ -1125,6 +1203,9 @@ void TermEval() {
       case DC4:
         printerPaperOut = true;
         break;
+      case ETB:
+        printerSawETB = true;
+        break;
     }
 
     if (valid) {
@@ -1143,44 +1224,6 @@ void TermEval() {
 
   // Profile indicator off
   digitalWrite(TEENSY_PROFILE_OUT, LOW);
-}
-
-
-void TinyBasicInit() {
-  // Configure for Tiny Basic operation, overwriting some terminal configuration values
-  termConvertCRLF = false;
-  linewrapEn = true;
-  tinyBasicRxPushI = 0;
-  tinyBasicRxPopI = 0;
-  tinyBasicRxNum = 0;
-  tinyBasicTxPushI = 0;
-  tinyBasicTxPopI = 0;
-  tinyBasicTxNum = 0;
-  tb_setup();
-}
-
-
-void TinyBasicEval() {
-  tb_loop();
-}
-
-
-void ElizaInit() {
-  // Configure for Eliza operation
-  termConvertCRLF = true;
-  linewrapEn = true;
-  tinyBasicRxPushI = 0;
-  tinyBasicRxPopI = 0;
-  tinyBasicRxNum = 0;
-  tinyBasicTxPushI = 0;
-  tinyBasicTxPopI = 0;
-  tinyBasicTxNum = 0;
-  tb_setup_for_virtual_host();
-  eliza_setup();
-}
-
-void ElizaEval() {
-  eliza_loop();
 }
 
 

@@ -175,15 +175,16 @@ static const int item8ValList[] = {1, 0};
 
 
 // Menu Item 9 value
-#define kNumMenu9Items 2
-static const char item9ValText1[] PROGMEM = "TERM ";
-static const char item9ValText2[] PROGMEM = "ELIZA";
+#define kNumMenu9Items 3
+static const char item9ValText1[] PROGMEM = "TERM  ";
+static const char item9ValText2[] PROGMEM = "ELIZA ";
+static const char item9ValText3[] PROGMEM = "BANNER";
 
 static const char* item9ValTextList[] PROGMEM = {
-  item9ValText1, item9ValText2
+  item9ValText1, item9ValText2, item9ValText3
 };
 
-static const int item9ValList[] = {0, 1};
+static const int item9ValList[] = {0, 1, 2};
 
 
 

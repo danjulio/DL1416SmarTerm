@@ -15,8 +15,8 @@
  *         10       1     CR/LF Handling (Convert either to CR+LF=1, Individual=0) - Applies
  *                        to terminal mode only
  *         11       1     Line Wrap (Enable = 1, Disable = 0) - Applies to terminal mode only
- *         12       1     Terminal Functionality (Terminal = 0, Eliza = 1) - Applies to terminal
- *                        mode only
+ *         12       1     Terminal Functionality (Terminal = 0, Eliza = 1, Banner = 2) - Applies
+ *                        to terminal mode only
  *  
  * ******************************************************************************************/
 #include <EEPROM.h>

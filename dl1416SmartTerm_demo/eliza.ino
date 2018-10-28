@@ -274,7 +274,7 @@ void eliza_setup()
   e_isIntro = true;
   e_inputStringIndex = 0;
 
-  e_PrintMsg(e_Intro);
+  vh_PrintMsg(e_Intro);
 }
 
 
@@ -288,9 +288,9 @@ void eliza_loop()
     if (TB_TX_AVAIL()) {
       POP_TB_TX();
       e_isIntro = false;
-      e_ClearScreen();
-      e_PrintMsg(e_MsgHello);
-      e_PrintPrompt();
+      vh_ClearScreen();
+      vh_PrintMsg(e_MsgHello);
+      vh_PrintPrompt(e_MsgPrompt);
       e_lastKeyPressT = millis();
     }
   } else {
@@ -301,7 +301,7 @@ void eliza_loop()
 
       if (c == ESC) {
         // Immediate Restart
-        e_ClearScreen();
+        vh_ClearScreen();
         eliza_setup();
       } else {
         // Process input
@@ -318,9 +318,9 @@ void eliza_loop()
             }
           }
           if (isDone) {
-            e_PrintMsg(e_MsgBye);
+            vh_PrintMsg(e_MsgBye);
             delay(1000);  // Let the user see this
-            e_ClearScreen();
+            vh_ClearScreen();
             eliza_setup();
             return;
           }
@@ -328,8 +328,8 @@ void eliza_loop()
           // Evaluate ELIZA
           if (strcmp(e_I$, e_P$) == 0) {
             // No repeating oneself!
-            e_PrintMsg(e_MsgNoRepeat);
-            e_PrintPrompt();
+            vh_PrintMsg(e_MsgNoRepeat);
+            vh_PrintPrompt(e_MsgPrompt);
           } else {
             // Find keyword
             //   on exit of this block:
@@ -370,7 +370,7 @@ void eliza_loop()
               sprintf(e_C$, " %s ", e_RIGHT$(e_I$, strlen(e_I$) - strlen(e_F$) - e_L));
 
               for (e_X = 0; e_X < e_N2 / 2; e_X++) {
-                for (e_L = 0; e_L < strlen(e_C$); e_L++) {
+                for (e_L = 0; e_L < (int) strlen(e_C$); e_L++) {
                   if (((e_L + strlen(e_wordin[e_X])) <= strlen(e_C$)) &&
                       (strcmp(e_MID$(e_C$, e_L, strlen(e_wordin[e_X])), e_wordin[e_X]) == 0)) {
                     sprintf(e_T$, "%s%s%s", e_LEFT$(e_C$, e_L), e_wordout[e_X], e_RIGHT$(e_C$, strlen(e_C$) - e_L - strlen(e_wordin[e_X])));
@@ -391,7 +391,7 @@ void eliza_loop()
                 // Only 1 space
                 (void) strcpy(e_C$, e_RIGHT$(e_C$, strlen(e_C$) - 1));
               }
-              for (e_L = 0; e_L < strlen(e_C$); e_L++) {
+              for (e_L = 0; e_L < (int) strlen(e_C$); e_L++) {
                 // Strip exclamation points
                 while (strcmp(e_MID$(e_C$, e_L, 1), "!") == 0) {
                   sprintf(e_T$, "%s%s", e_LEFT$(e_C$, e_L - 1), e_RIGHT$(e_C$, strlen(e_C$) - e_L));
@@ -408,18 +408,18 @@ void eliza_loop()
               e_R[e_K] = e_S[e_K];
             }
             if (strcmp(e_RIGHT$(e_F$, 1), "*") != 0) {
-              e_PrintString(e_F$);
+              vh_PrintString(e_F$);
               (void) strcpy(e_P$, e_I$);
             } else {
               if (strcmp(e_C$, "   ") != 0) {
                 sprintf(e_P$, "%s%s", e_LEFT$(e_F$, strlen(e_F$) - 1), e_C$);
-                e_PrintString(e_P$);
+                vh_PrintString(e_P$);
                 (void) strcpy(e_P$, e_I$);
               } else {
-                e_PrintMsg(e_MsgElaborate);
+                vh_PrintMsg(e_MsgElaborate);
               }
             }
-            e_PrintPrompt();
+            vh_PrintPrompt(e_MsgPrompt);
           }
         }
       }
@@ -427,12 +427,12 @@ void eliza_loop()
       // Look for inactivity timeout
       if (InactivityTimeoutMsec(e_lastKeyPressT, e_TimeoutSecs * 1000)) {
         // Restart
-        e_ClearScreen();
+        vh_ClearScreen();
         eliza_setup();
       }
     }
   }
-  delay(1);
+  yield();
 }
 
 
@@ -453,12 +453,13 @@ bool e_InputString(char c)
     }
     if (c == CR) {
       // Also move to next line (NL automatically forces CR with out setup in ElizaInit)
-      e_OutChar(NL);
+      vh_OutChar(NL);
     }
     validChar = false;
   } else if ((c == BS) || (c == DEL)) {
     // Backspace one character in the buffer
     if (e_inputStringIndex > 0) e_inputStringIndex--;
+    c = DEL;  // Force a destructive backspace
     validChar = false;
   } else if (c < 0x20) {
     // Ignore this character (control characters and apostrophes)
@@ -476,58 +477,10 @@ bool e_InputString(char c)
   }
 
   if (echoChar) {
-    e_OutChar(c);
+    vh_OutChar(c);
   }
 
   return (retVal);
-}
-
-
-void e_OutChar(char c)
-{
-  while (TB_RX_FULL()) {
-    delay(1);
-  }
-  PUSH_TB_RX(c);
-}
-
-
-void e_PrintMsg(const char* m)
-{
-  while (*m != 0) {
-    e_OutChar((char) *m++);
-  }
-  e_OutChar(NL);
-  e_OutChar(CR);
-}
-
-
-void e_PrintPrompt()
-{
-  const char* m = e_MsgPrompt;
-
-  while (*m != 0) {
-    e_OutChar((char) *m++);
-  }
-}
-
-
-void e_PrintString(char* m)
-{
-  while (*m != 0) {
-    e_OutChar(*m++);
-  }
-  e_OutChar(NL);
-  e_OutChar(CR);
-}
-
-void e_ClearScreen()
-{
-  // Clear screen (ANSI)
-  e_OutChar(ESC);
-  e_OutChar('[');
-  e_OutChar('2');
-  e_OutChar('J');
 }
 
 

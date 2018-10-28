@@ -2600,13 +2600,6 @@ void tb_setup()
 #endif
 }
 
-void tb_setup_for_virtual_host()
-{
-  output_mask = OUTPUT_MASK_SCREEN;
-  input_mask = TB_INPUT_MASK_KEYBOARD;
-}
-
-
 /***************************************************************************/
 static unsigned char breakcheck(void)
 {
@@ -2659,7 +2652,7 @@ static int inchar()
         }
 #endif
 
-        delay(1);  // necessary or this code will never execute (optimized away somehow?)
+        yield();
       }
   }
 
@@ -2688,28 +2681,33 @@ static void outchar(unsigned char c)
     // Only push when there's room
     if ((output_mask & OUTPUT_MASK_SCREEN) == OUTPUT_MASK_SCREEN) {
       while (TB_RX_FULL()) {
-        delay(1);
+        yield();
       }
       PUSH_TB_RX(c);
     }
     if ((output_mask & OUTPUT_MASK_USB_HOST) == OUTPUT_MASK_USB_HOST) {
       while (HOST_TX1_FULL()) {
-        delay(1);
+        yield();
       }
       PUSH_HOST_TX1(c);
     }
     if ((output_mask & OUTPUT_MASK_SER_HOST) == OUTPUT_MASK_SER_HOST) {
       while (HOST_TX2_FULL()) {
-        delay(1);
+        yield();
       }
       PUSH_HOST_TX2(c);
     }
     if ((output_mask & OUTPUT_MASK_PRINTER) == OUTPUT_MASK_PRINTER) {
       while (PRT_TX_FULL()) {
-        delay(1);
+        yield();
       }
       PUSH_PRT_TX(c);
     }
+
+    // Force check of any incoming flow-control from external devices like a host or
+    // printer because full TX buffers could overrun these devices if we don't see
+    // their flow-control.
+    yield();
   }
 }
 

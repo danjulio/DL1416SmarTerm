@@ -40,6 +40,10 @@
 // v1.2 : 2018-10-15
 //      Modified DEMO_MODE support to run "demorun.bas" file and indicate demo
 //      mode in sign-on message.  Shortened demo timeout to 10 minutes.
+// v1.3 : 2018-10-28
+//      Fixed bug with spaces after quoted string in print.  Added yield to breakcheck
+//      so USB serial can get polled for break.  Changed backspace from DEL to ANSI
+//      sequence for easier editing from a remote ANSI complient device.
 //
 ////////////////////////////////////////////////////////////////////////////////
 #include <Audio.h>
@@ -69,7 +73,7 @@
 // Constants...
 
 // Version
-#define kTbVersion      "v1.2"
+#define kTbVersion      "v1.3"
 
 // Memory available to Tiny Basic
 #define kRamSize  (kTinyBasicRam-1)
@@ -375,7 +379,6 @@ static const unsigned char demomsg[]          PROGMEM = "Demo Mode - Resets afte
 static const unsigned char memorymsg[]        PROGMEM = " bytes free.";
 static const unsigned char breakmsg[]         PROGMEM = "break!";
 static const unsigned char unimplimentedmsg[] PROGMEM = "Unimplemented";
-static const unsigned char backspacemsg[]     PROGMEM = "\b \b";
 static const unsigned char indentmsg[]        PROGMEM = "    ";
 static const unsigned char sderrormsg[]       PROGMEM = "SD card error.";
 static const unsigned char sdfilemsg[]        PROGMEM = "SD file error.";
@@ -691,8 +694,7 @@ static void getln(char prompt)
           break;
         txtpos--;
 
-        //printmsg(backspacemsg);
-        outchar(DEL);
+        backspace_cursor();
         break;
       default:
         // We need to leave at least one space to allow us to shuffle the line into order
@@ -749,7 +751,7 @@ static int getnum()
     } else if ((c == CTRLH) || (c == DEL)) {
       if (bufP > &buf[0]) {
         bufP--;
-        outchar(DEL);
+        backspace_cursor();
       }
     } else if (c == CTRLC) {
       return n;
@@ -1825,6 +1827,8 @@ print:
       printnum(e);
     }
 
+    ignore_blanks();
+
     // At this point we have three options, a comma or a new line
     if (*txtpos == ',')
       txtpos++; // Skip the comma and move onto the next
@@ -2570,6 +2574,21 @@ static void line_terminator(void)
   outchar(CR);
 }
 
+static void backspace_cursor()
+{
+  // ANSI backspace
+  outchar(ESC);
+  outchar('[');
+  outchar('1');
+  outchar('D');
+
+  // ANSI delete character
+  outchar(ESC);
+  outchar('[');
+  outchar('1');
+  outchar('P');
+}
+
 /***************************************************************************/
 void tb_setup()
 {
@@ -2605,6 +2624,7 @@ static unsigned char breakcheck(void)
 {
   char c;
 
+  yield();                   // Allow procesing of incoming characters
   if (TB_TX_AVAIL()) {
     c = PEEK_TB_TX();
     POP_TB_TX();
